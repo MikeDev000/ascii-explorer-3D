@@ -1,4 +1,4 @@
-# ASCII Explorer 3D
+# ASCII Explorer 3D v1.0.0
 
 **ASCII Explorer 3D** es un videojuego minimalista de exploración en primera persona con gráficos renderizados mediante caracteres ASCII. El proyecto está construido con Three.js y AsciiEffect, empaquetado con Vite y desarrollado en TypeScript.
 
