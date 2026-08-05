@@ -14,7 +14,7 @@ export function createRenderer() {
     color: false,
     alpha: false,
     block: false,
-    strResolution: 'low'
+    // strResolution: 'low'
   });
 
   effect.setSize(window.innerWidth, window.innerHeight);
