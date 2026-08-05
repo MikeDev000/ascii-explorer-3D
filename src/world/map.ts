@@ -3,14 +3,18 @@ import * as THREE from 'three';
 export function createMap(scene: THREE.Scene) {
   // Floor
   const floorGeo = new THREE.PlaneGeometry(50, 50);
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const floorMat = new THREE.MeshPhongMaterial({ color: 0x333333, shininess: 10 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
 
   // Material for walls and structures
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  const wallMat = new THREE.MeshPhongMaterial({ 
+    color: 0xaaaaaa,
+    shininess: 60,
+    specular: 0x222222
+  });
 
   // Add perimeter walls
   const wallGeo = new THREE.BoxGeometry(50, 5, 1);
@@ -42,20 +46,37 @@ export function createMap(scene: THREE.Scene) {
   scene.add(westWall);
 
   // Minimalist Labyrinth Structures (procedural)
-  const columnGeo = new THREE.BoxGeometry(2, 4, 2);
-  const blockGeo = new THREE.BoxGeometry(4, 2, 4);
+  const geometries = [
+    new THREE.BoxGeometry(2, 4, 2),
+    new THREE.BoxGeometry(4, 2, 4),
+    new THREE.SphereGeometry(2, 16, 16),
+    new THREE.TorusGeometry(1.5, 0.5, 16, 32),
+    new THREE.CylinderGeometry(1, 1, 4, 16)
+  ];
 
-  // Random columns
-  for (let i = 0; i < 20; i++) {
+  // Random objects
+  for (let i = 0; i < 30; i++) {
     const x = Math.floor(Math.random() * 40) - 20;
     const z = Math.floor(Math.random() * 40) - 20;
     
     // leave center empty for player spawn
     if (Math.abs(x) < 4 && Math.abs(z) < 4) continue;
 
-    const isColumn = Math.random() > 0.5;
-    const mesh = new THREE.Mesh(isColumn ? columnGeo : blockGeo, wallMat);
-    mesh.position.set(x, isColumn ? 2 : 1, z);
+    const geoIndex = Math.floor(Math.random() * geometries.length);
+    const mesh = new THREE.Mesh(geometries[geoIndex], wallMat);
+    
+    // Adjust heights based on geometry type
+    let yPos = 2;
+    if (geoIndex === 1) yPos = 1; // Flat box
+    if (geoIndex === 3) yPos = 1.5; // Torus
+
+    mesh.position.set(x, yPos, z);
+    
+    if (geoIndex === 3) {
+      mesh.rotation.x = Math.random() * Math.PI;
+      mesh.rotation.y = Math.random() * Math.PI;
+    }
+
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     scene.add(mesh);

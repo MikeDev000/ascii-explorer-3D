@@ -8,7 +8,8 @@ export function createRenderer() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setPixelRatio(1); // Low internal resolution for performance
 
-  const effect = new AsciiEffect(renderer, ' .,:;i1tfLCG08@', {
+  const asciiChars = " .\'\`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+  const effect = new AsciiEffect(renderer, asciiChars, {
     resolution: 0.15,
     invert: true,
     color: false,
