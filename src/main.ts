@@ -10,7 +10,7 @@ import { useGameStore } from './store/gameStore';
 async function main() {
   const scene = createScene();
   const camera = createCamera();
-  const { effect } = createRenderer();
+  const { effect } = createRenderer(scene, camera);
   setupLighting(scene);
 
   createMap(scene);

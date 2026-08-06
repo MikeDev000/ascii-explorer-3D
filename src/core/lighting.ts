@@ -21,20 +21,20 @@ export function setupLighting(scene: THREE.Scene) {
 
   scene.add(dirLight);
 
-  // Minimal ambient light
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
+  // Ambient light for full field-of-view visibility
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
   scene.add(ambientLight);
 
   // Point lights for dramatic shadows and specular highlights
-  const pointLight1 = new THREE.PointLight(0xffffff, 1.5, 20);
+  const pointLight1 = new THREE.PointLight(0xffffff, 1.5, 10);
   pointLight1.position.set(10, 5, 10);
   scene.add(pointLight1);
 
-  const pointLight2 = new THREE.PointLight(0xffffff, 1.5, 20);
+  const pointLight2 = new THREE.PointLight(0xffffff, 1.5, 10);
   pointLight2.position.set(-10, 5, -10);
   scene.add(pointLight2);
 
-  const pointLight3 = new THREE.PointLight(0xffffff, 1.0, 30);
+  const pointLight3 = new THREE.PointLight(0xffffff, 1.0, 15);
   pointLight3.position.set(0, 8, 15);
   scene.add(pointLight3);
 }
