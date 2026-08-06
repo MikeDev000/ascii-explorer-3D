@@ -13,13 +13,14 @@ async function main() {
   const { effect } = createRenderer(scene, camera);
   setupLighting(scene);
 
-  createMap(scene);
+  // Initialize Rapier3D physics engine
+  const physicsWorld = await initPhysics();
+
+  // Create map meshes and physics colliders
+  createMap(scene, physicsWorld);
 
   const input = new InputManager();
-  const player = new PlayerController(camera, document.body, input);
-
-  // Initialize physics (stubbed for now)
-  await initPhysics();
+  const player = new PlayerController(camera, document.body, input, physicsWorld);
 
   let lastTime = performance.now();
   let frames = 0;
@@ -32,7 +33,13 @@ async function main() {
     const delta = (time - lastTime) / 1000;
     lastTime = time;
 
+    // Step physics simulation
+    physicsWorld.step();
+
+    // Update player and camera position
     player.update(delta);
+
+    // Render ASCII post-processed scene
     effect.render(scene, camera);
 
     frames++;
