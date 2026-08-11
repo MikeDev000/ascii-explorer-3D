@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { InputManager } from './input';
 import RAPIER from '@dimforge/rapier3d';
+import { useGameStore } from '../store/gameStore';
 
 export class PlayerController {
   private controls: PointerLockControls;
@@ -28,7 +29,12 @@ export class PlayerController {
     const hud = document.getElementById('hud');
 
     instructions?.addEventListener('click', () => {
-      this.controls.lock();
+      try {
+        const p = (this.controls as any).lock();
+        if (p && typeof p.catch === 'function') {
+          p.catch(() => {});
+        }
+      } catch (_) {}
     });
 
     this.controls.addEventListener('lock', () => {
@@ -37,8 +43,12 @@ export class PlayerController {
     });
 
     this.controls.addEventListener('unlock', () => {
-      if (instructions) instructions.style.display = 'flex';
-      if (hud) hud.style.display = 'none';
+      const isTerminalOpen = useGameStore.getState().isTerminalOpen;
+      
+      if (!isTerminalOpen) {
+        if (instructions) instructions.style.display = 'flex';
+        if (hud) hud.style.display = 'none';
+      }
     });
 
     // Create Rapier physics body for player capsule

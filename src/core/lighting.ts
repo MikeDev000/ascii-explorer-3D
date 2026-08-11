@@ -22,7 +22,7 @@ export function setupLighting(scene: THREE.Scene) {
   scene.add(dirLight);
 
   // Ambient light for full field-of-view visibility
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1);
   scene.add(ambientLight);
 
   // Point lights for dramatic shadows and specular highlights

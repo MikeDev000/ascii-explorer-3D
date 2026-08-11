@@ -5,7 +5,7 @@ export function createScene() {
   scene.background = new THREE.Color(0x000000);
 
   // Fog to limit visibility gently at far distance
-  scene.fog = new THREE.FogExp2(0x000000, 0.00001);
+  scene.fog = new THREE.FogExp2(0x000000, 0.001);
 
   return scene;
 }

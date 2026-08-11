@@ -51,6 +51,17 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
   const appContainer = document.getElementById('app');
   if (appContainer) {
     appContainer.appendChild(effect.domElement);
+
+    // High-performance colorization: overlay the WebGL canvas on top of the monochrome ASCII text
+    // using mix-blend-mode: multiply. The black background remains black, and white text gets colored.
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.pointerEvents = 'none'; // Let clicks pass through
+    renderer.domElement.style.mixBlendMode = 'multiply';
+    appContainer.appendChild(renderer.domElement);
   }
 
   // Intercept effect.render to run post-processing composer first,

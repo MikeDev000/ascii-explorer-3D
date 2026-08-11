@@ -6,10 +6,23 @@ import { PlayerController } from './systems/player';
 import { createMap } from './world/map';
 import { initPhysics } from './physics/physics';
 import { useGameStore } from './store/gameStore';
-
+import { LampSystem } from './systems/lamp';
+import { TerminalSystem } from './systems/terminal';
 async function main() {
+  // Suppress unhandled promise rejections caused by browser pointer lock rate-limiting
+  window.addEventListener('unhandledrejection', (event) => {
+    if (
+      event.reason &&
+      (event.reason.name === 'SecurityError' ||
+        (typeof event.reason.message === 'string' && event.reason.message.includes('Pointer lock')))
+    ) {
+      event.preventDefault();
+    }
+  });
+
   const scene = createScene();
   const camera = createCamera();
+  scene.add(camera);
   const { effect } = createRenderer(scene, camera);
   setupLighting(scene);
 
@@ -21,6 +34,8 @@ async function main() {
 
   const input = new InputManager();
   const player = new PlayerController(camera, document.body, input, physicsWorld);
+  const lamp = new LampSystem(camera, input);
+  const terminal = new TerminalSystem(input);
 
   let lastTime = performance.now();
   let frames = 0;
@@ -38,6 +53,7 @@ async function main() {
 
     // Update player and camera position
     player.update(delta);
+    lamp.update(delta);
 
     // Render ASCII post-processed scene
     effect.render(scene, camera);

@@ -6,6 +6,9 @@ interface GameState {
 
   time: number;
   setTime: (time: number) => void;
+
+  isTerminalOpen: boolean;
+  setTerminalOpen: (isOpen: boolean) => void;
 }
 
 export const useGameStore = createStore<GameState>((set) => ({
@@ -14,4 +17,7 @@ export const useGameStore = createStore<GameState>((set) => ({
 
   time: 0,
   setTime: (time: number) => set({ time }),
+
+  isTerminalOpen: false,
+  setTerminalOpen: (isTerminalOpen: boolean) => set({ isTerminalOpen }),
 }));
