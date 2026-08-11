@@ -9,9 +9,9 @@ export class PlayerController {
   private rigidBody: RAPIER.RigidBody | null = null;
   private world: RAPIER.World | null = null;
 
-  private baseSpeed = 5.0;
+  private baseSpeed = 4.0;
   private sprintMultiplier = 1.5;
-  private jumpImpulse = 6.5;
+  private jumpImpulse = 3.5;
   private isGrounded = false;
 
   constructor(
@@ -77,16 +77,19 @@ export class PlayerController {
     if (this.rigidBody && this.world) {
       const linvel = this.rigidBody.linvel();
 
-      // Check ground using a downward Raycast from capsule center
+      // Check ground using a downward Raycast originating just below the capsule feet (center - 0.92m)
       const playerPos = this.rigidBody.translation();
+      const rayOriginY = playerPos.y - 0.92;
       const ray = new RAPIER.Ray(
-        { x: playerPos.x, y: playerPos.y, z: playerPos.z },
+        { x: playerPos.x, y: rayOriginY, z: playerPos.z },
         { x: 0, y: -1, z: 0 }
       );
 
-      // Capsule bottom is at y = playerPos.y - 0.9m. Ray length 1.05m detects ground right below feet
-      const hit = this.world.castRay(ray, 1.05, true);
-      this.isGrounded = hit !== null && hit.timeOfImpact <= 1.05;
+      // Cast 0.15m downwards from feet
+      const hit = this.world.castRay(ray, 0.15, true);
+
+      // Player is grounded if ray hits a surface right below feet AND is not actively jumping upwards
+      this.isGrounded = hit !== null && linvel.y <= 0.1;
 
       // Calculate camera orientation direction vectors
       const frontDir = new THREE.Vector3();
@@ -113,9 +116,11 @@ export class PlayerController {
 
       let targetVy = linvel.y;
 
+      // console.log("playerPos.y: ", playerPos.y, "isGrounded: ", this.isGrounded, "hit", hit);
       // Handle Jumping
       if (wantJump && this.isGrounded) {
         targetVy = this.jumpImpulse;
+        this.isGrounded = false;
       }
 
       this.rigidBody.setLinvel({ x: targetVx, y: targetVy, z: targetVz }, true);
