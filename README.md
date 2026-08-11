@@ -79,11 +79,11 @@ src/
 
 Al iniciar, aparecerás en un mundo plano con bloques generados aleatoriamente.
 
-- Usa **WASD** para moverte.
+- Usa ``WASD`` para moverte.
 - Mira alrededor con el **mouse**.
-- Presiona **Espacio** para saltar.
-- Usa **F** para encender y apagar la linterna.
-- Usa la tecla **|** (debajo de Esc) para abrir y cerrar la terminal.
+- Presiona ``Espacio`` para saltar.
+- Usa ``F`` para encender y apagar la linterna.
+- Usa la tecla ``|`` (debajo de Esc) para abrir y cerrar la terminal.
 - Escribe **hello** en la terminal y presiona **Enter** para saludar.
 
 ---
