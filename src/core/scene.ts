@@ -13,5 +13,6 @@ export function createScene() {
 export function createCamera() {
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 1.85, 0); // 1.85m, altura del personaje
+  camera.layers.enable(1); // Habilitar visión para objetos ocultos
   return camera;
 }

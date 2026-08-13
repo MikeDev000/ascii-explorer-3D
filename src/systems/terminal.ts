@@ -108,6 +108,17 @@ export class TerminalSystem {
       case 'hello':
         this.print('Hello world :)');
         break;
+      case 'help':
+        this.print('Commands:');
+        this.print('  hello - Says hello');
+        this.print('  help - Shows this message');
+        this.print('  ls / scan - Lista los objetos interactivos cercanos al sector actual');
+        this.print('  cat [objeto] - Lee el contenido o el estado de un objeto');
+        this.print('  set [variable] = [valor] - Cambia el valor de una propiedad del mapa o jugador. Ej: gravity');
+        this.print('  chmod [permiso] [objeto] - Cambia las propiedades de acceso de un muro o puerta');
+        this.print('  free - Libera la memoria cercana, destruye obstaculos menores alrededor');
+        this.print('  kill -9 <proceso> - Elimina un proceso/entidad/obstaculo de código corrupto');
+        break;
       default:
         this.print(`Command not found: ${command}`);
         break;

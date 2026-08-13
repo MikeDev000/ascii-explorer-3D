@@ -1,10 +1,28 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d';
+import { HiddenMessage } from './HiddenMessage';
 
 export function createMap(scene: THREE.Scene, world?: RAPIER.World) {
+  // Procedural checkerboard texture for the floor to add detail in ASCII rendering
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#333333';
+  ctx.fillRect(0, 0, 512, 512);
+  ctx.fillStyle = '#666666';
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.fillRect(256, 256, 256, 256);
+
+  const floorTexture = new THREE.CanvasTexture(canvas);
+  floorTexture.wrapS = THREE.RepeatWrapping;
+  floorTexture.wrapT = THREE.RepeatWrapping;
+  floorTexture.repeat.set(25, 25);
+  floorTexture.magFilter = THREE.NearestFilter;
+
   // Floor
   const floorGeo = new THREE.PlaneGeometry(50, 50);
-  const floorMat = new THREE.MeshPhongMaterial({ color: 0x333333, shininess: 10 });
+  const floorMat = new THREE.MeshPhongMaterial({ map: floorTexture, shininess: 10 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
@@ -19,7 +37,7 @@ export function createMap(scene: THREE.Scene, world?: RAPIER.World) {
   }
 
   // Material for walls and structures
-  const wallMat = new THREE.MeshPhongMaterial({ 
+  const wallMat = new THREE.MeshPhongMaterial({
     color: 0xaaaaaa,
     shininess: 60,
     specular: 0x222222
@@ -51,70 +69,26 @@ export function createMap(scene: THREE.Scene, world?: RAPIER.World) {
     }
   });
 
-  // Minimalist Labyrinth Structures (procedural)
-  const geometries = [
-    new THREE.BoxGeometry(2, 4, 2),        // Index 0: Column Box
-    new THREE.BoxGeometry(4, 2, 4),        // Index 1: Flat Box
-    new THREE.SphereGeometry(2, 16, 16),    // Index 2: Sphere
-    new THREE.TorusGeometry(1.5, 0.5, 16, 32), // Index 3: Torus
-    new THREE.CylinderGeometry(1, 1, 4, 16) // Index 4: Cylinder
-  ];
+  // Normal Cube (Visible normally)
+  const cubeGeo = new THREE.BoxGeometry(3, 3, 3);
+  const cubeMat = new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 30 });
+  const normalCube = new THREE.Mesh(cubeGeo, cubeMat);
+  normalCube.position.set(0, 1.5, -8);
+  normalCube.receiveShadow = true;
+  normalCube.castShadow = true;
+  scene.add(normalCube);
 
-  // Random objects
-  for (let i = 0; i < 30; i++) {
-    const x = Math.floor(Math.random() * 40) - 20;
-    const z = Math.floor(Math.random() * 40) - 20;
-    
-    // leave center empty for player spawn
-    if (Math.abs(x) < 4 && Math.abs(z) < 4) continue;
-
-    const geoIndex = Math.floor(Math.random() * geometries.length);
-    const mesh = new THREE.Mesh(geometries[geoIndex], wallMat);
-    
-    // Adjust heights based on geometry type
-    let yPos = 2;
-    if (geoIndex === 1) yPos = 1; // Flat box
-    if (geoIndex === 3) yPos = 1.5; // Torus
-
-    mesh.position.set(x, yPos, z);
-    
-    if (geoIndex === 3) {
-      mesh.rotation.x = Math.random() * Math.PI;
-      mesh.rotation.y = Math.random() * Math.PI;
-    }
-
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
-
-    // Create Rapier static collider matching geometry
-    if (world) {
-      const rigidBodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(x, yPos, z);
-      const rigidBody = world.createRigidBody(rigidBodyDesc);
-
-      let colliderDesc: RAPIER.ColliderDesc;
-
-      switch (geoIndex) {
-        case 0: // Box 2x4x2
-          colliderDesc = RAPIER.ColliderDesc.cuboid(1, 2, 1);
-          break;
-        case 1: // Flat Box 4x2x4
-          colliderDesc = RAPIER.ColliderDesc.cuboid(2, 1, 2);
-          break;
-        case 2: // Sphere radius 2
-          colliderDesc = RAPIER.ColliderDesc.ball(2.0);
-          break;
-        case 3: // Torus approximated by ball collider for simple collision
-          colliderDesc = RAPIER.ColliderDesc.ball(1.8);
-          break;
-        case 4: // Cylinder radius 1, height 4
-          colliderDesc = RAPIER.ColliderDesc.cylinder(2.0, 1.0);
-          break;
-        default:
-          colliderDesc = RAPIER.ColliderDesc.cuboid(1, 1, 1);
-      }
-
-      world.createCollider(colliderDesc, rigidBody);
-    }
+  if (world) {
+    const rigidBodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(0, 1.5, -8);
+    const rigidBody = world.createRigidBody(rigidBodyDesc);
+    const colliderDesc = RAPIER.ColliderDesc.cuboid(1.5, 1.5, 1.5);
+    world.createCollider(colliderDesc, rigidBody);
   }
+
+  // Hidden Message Decal (Attached to the front face of the cube)
+  const hiddenMessage = new HiddenMessage("HELLO\nWORLD", 2.5, 2.5);
+  // Positioned slightly in front of the cube's front face (z = -8 + 1.5 + 0.01)
+  hiddenMessage.position.set(1.51, 1.51, -8.0);
+  hiddenMessage.rotation.y = Math.PI / 2;
+  scene.add(hiddenMessage);
 }

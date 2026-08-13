@@ -32,9 +32,9 @@ export class PlayerController {
       try {
         const p = (this.controls as any).lock();
         if (p && typeof p.catch === 'function') {
-          p.catch(() => {});
+          p.catch(() => { });
         }
-      } catch (_) {}
+      } catch (_) { }
     });
 
     this.controls.addEventListener('lock', () => {
@@ -44,7 +44,7 @@ export class PlayerController {
 
     this.controls.addEventListener('unlock', () => {
       const isTerminalOpen = useGameStore.getState().isTerminalOpen;
-      
+
       if (!isTerminalOpen) {
         if (instructions) instructions.style.display = 'flex';
         if (hud) hud.style.display = 'none';
@@ -55,7 +55,7 @@ export class PlayerController {
     if (this.world) {
       // Player capsule body (half height 0.5m, radius 0.4m -> total height 1.8m)
       const rigidBodyDesc = RAPIER.RigidBodyDesc.dynamic()
-        .setTranslation(0, 1.85, 0)
+        .setTranslation(0, 15.0, 0)
         .lockRotations(); // Keep capsule upright
 
       this.rigidBody = this.world.createRigidBody(rigidBodyDesc);
