@@ -12,7 +12,7 @@ export class PlayerController {
 
   private baseSpeed = 4.0;
   private sprintMultiplier = 1.5;
-  private jumpImpulse = 3.5;
+  private jumpImpulse = 7;
   private isGrounded = false;
 
   constructor(
@@ -126,7 +126,9 @@ export class PlayerController {
 
       let targetVy = linvel.y;
 
-      // console.log("playerPos.y: ", playerPos.y, "isGrounded: ", this.isGrounded, "hit", hit);
+      // console messages
+      console.log("playerPos.x: ", Math.round(playerPos.x), "playerPos.y: ", Math.round(playerPos.y), "playerPos.z: ", Math.round(playerPos.z));
+
       // Handle Jumping
       if (wantJump && this.isGrounded) {
         targetVy = this.jumpImpulse;

@@ -30,7 +30,7 @@ async function main() {
   const physicsWorld = await initPhysics();
 
   // Create map meshes and physics colliders
-  createMap(scene, physicsWorld);
+  const map = createMap(scene, physicsWorld);
 
   const input = new InputManager();
   const player = new PlayerController(camera, document.body, input, physicsWorld);
@@ -51,7 +51,8 @@ async function main() {
     // Step physics simulation
     physicsWorld.step();
 
-    // Update player and camera position
+    // Update map dynamic objects, player, and camera position
+    map?.update(delta);
     player.update(delta);
     lamp.update(delta);
 

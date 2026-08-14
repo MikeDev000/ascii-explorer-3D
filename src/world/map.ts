@@ -78,17 +78,53 @@ export function createMap(scene: THREE.Scene, world?: RAPIER.World) {
   normalCube.castShadow = true;
   scene.add(normalCube);
 
+  // Hidden Message Decal (Attached as child to the front face of normalCube)
+  const hiddenMessage = new HiddenMessage("HELLO\nWORLD", 2.5, 2.5);
+  // Local coordinates relative to normalCube center (front face +Z = 1.5 + 0.01)
+  hiddenMessage.position.set(0, 0, 1.51);
+  normalCube.add(hiddenMessage);
+
+  // Dynamic Sphere (Ball)
+  const dSphereG = new THREE.SphereGeometry(1, 16, 16);
+  const dSphereM = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.2 });
+  const meshSphere = new THREE.Mesh(dSphereG, dSphereM);
+  meshSphere.position.set(-6, 3.0, -8);
+  meshSphere.receiveShadow = true;
+  meshSphere.castShadow = true;
+  scene.add(meshSphere);
+
+  let ballRigidBody: RAPIER.RigidBody | null = null;
+
+  // Collisions
   if (world) {
+    // Cube collider (Static)
     const rigidBodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(0, 1.5, -8);
     const rigidBody = world.createRigidBody(rigidBodyDesc);
     const colliderDesc = RAPIER.ColliderDesc.cuboid(1.5, 1.5, 1.5);
     world.createCollider(colliderDesc, rigidBody);
+
+    // Sphere collider (Dynamic - Bouncy Ball)
+    const rbodySpDesc = RAPIER.RigidBodyDesc.dynamic()
+      .setTranslation(-6, 3.0, -8)
+      .setLinearDamping(0.3)
+      .setAngularDamping(0.3);
+    ballRigidBody = world.createRigidBody(rbodySpDesc);
+
+    const colliderSpDesc = RAPIER.ColliderDesc.ball(1.0)
+      .setFriction(0.4)
+      .setRestitution(0.7); // Bouncy ball!
+    world.createCollider(colliderSpDesc, ballRigidBody);
   }
 
-  // Hidden Message Decal (Attached to the front face of the cube)
-  const hiddenMessage = new HiddenMessage("HELLO\nWORLD", 2.5, 2.5);
-  // Positioned slightly in front of the cube's front face (z = -8 + 1.5 + 0.01)
-  hiddenMessage.position.set(1.51, 1.51, -8.0);
-  hiddenMessage.rotation.y = Math.PI / 2;
-  scene.add(hiddenMessage);
+  return {
+    update: (_delta: number) => {
+      // Sync dynamic sphere physics body to visual mesh
+      if (ballRigidBody && meshSphere) {
+        const pos = ballRigidBody.translation();
+        const rot = ballRigidBody.rotation();
+        meshSphere.position.set(pos.x, pos.y, pos.z);
+        meshSphere.quaternion.set(rot.x, rot.y, rot.z, rot.w);
+      }
+    }
+  };
 }
