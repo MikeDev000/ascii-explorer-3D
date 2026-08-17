@@ -39,6 +39,14 @@ export class LampSystem {
         }
       }
     });
+
+    // Listen for custom recharge events from terminal crafting
+    window.addEventListener('lamp-recharge', ((e: CustomEvent) => {
+      const { percent, penalty } = e.detail;
+      useGameStore.getState().setBattery(percent);
+      // Penalty applies accelerated wear by initializing timeOn to a higher value
+      this.timeOn = penalty; 
+    }) as EventListener);
   }
 
   public toggle() {

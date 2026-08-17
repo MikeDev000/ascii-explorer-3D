@@ -8,6 +8,8 @@ import { initPhysics } from './physics/physics';
 import { useGameStore } from './store/gameStore';
 import { LampSystem } from './systems/lamp';
 import { TerminalSystem } from './systems/terminal';
+import { CollectiblesSystem } from './world/collectibles';
+
 async function main() {
   // Suppress unhandled promise rejections caused by browser pointer lock rate-limiting
   window.addEventListener('unhandledrejection', (event) => {
@@ -36,6 +38,9 @@ async function main() {
   const player = new PlayerController(camera, document.body, input, physicsWorld);
   const lamp = new LampSystem(camera, input);
   const terminal = new TerminalSystem(input);
+  
+  // Use a hacky way to expose player's rigidBody translation by using any cast
+  const collectibles = new CollectiblesSystem(scene, camera, (player as any).rigidBody);
 
   let lastTime = performance.now();
   let frames = 0;
@@ -44,6 +49,7 @@ async function main() {
   const batteryUi = document.getElementById('battery-ui');
   const batteryBar = document.getElementById('battery-bar');
   const batteryText = document.getElementById('battery-text');
+  const appContainer = document.getElementById('app');
   let hasPlayedGlitch = false;
 
   function animate(time: number) {
@@ -55,13 +61,15 @@ async function main() {
     // Step physics simulation
     physicsWorld.step();
 
-    // Update map dynamic objects, player, and camera position
+    // Update map dynamic objects, player, camera position, and collectibles
     map?.update(delta);
     player.update(delta);
     lamp.update(delta);
+    collectibles.update(delta);
 
     // Sync Battery HUD
-    const batteryLevel = useGameStore.getState().battery;
+    const storeState = useGameStore.getState();
+    const batteryLevel = storeState.battery;
     if (batteryBar && batteryText && batteryUi) {
       batteryBar.style.width = `${batteryLevel}%`;
       batteryText.textContent = `${Math.ceil(batteryLevel)}%`;
@@ -91,6 +99,19 @@ async function main() {
           batteryBar.style.backgroundColor = '#0ff';
           batteryBar.style.boxShadow = '0 0 10px #0ff';
         }
+      }
+    }
+
+    // Corrupted component visual screen glitch sync
+    if (appContainer) {
+      if (storeState.triggerGlitch) {
+        appContainer.classList.add('screen-glitch');
+        // Stop glitch after 5 seconds automatically
+        setTimeout(() => {
+          storeState.setTriggerGlitch(false);
+        }, 5000);
+      } else {
+        appContainer.classList.remove('screen-glitch');
       }
     }
 

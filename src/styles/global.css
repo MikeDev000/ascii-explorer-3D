@@ -191,3 +191,56 @@ html, body {
 .battery-low-glitch {
   animation: batteryGlitch 0.2s 15;
 }
+
+/* Collectibles and Corruption System */
+#collectibles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.collectible {
+  position: absolute;
+  color: #00ffff;
+  background: rgba(12, 5, 24, 0.85);
+  border: 1.5px solid #ff00ff;
+  box-shadow: 0 0 12px rgba(255, 0, 255, 0.7), inset 0 0 6px rgba(255, 0, 255, 0.3);
+  padding: 3px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: bold;
+  font-size: 13px;
+  letter-spacing: 1px;
+  transform: translate(-50%, -150%);
+  white-space: nowrap;
+  border-radius: 3px;
+  pointer-events: none;
+  text-shadow: 0 0 6px #ff00ff;
+}
+
+@keyframes corruptBlink {
+  0% { color: #ff00ff; border-color: #ff00ff; box-shadow: 0 0 12px #ff00ff; }
+  50% { color: #ff003c; border-color: #ff003c; box-shadow: 0 0 18px #ff003c, inset 0 0 8px #ff003c; transform: translate(-50%, -150%) skewX(6deg); }
+  100% { color: #ff00ff; border-color: #ff00ff; box-shadow: 0 0 12px #ff00ff; }
+}
+
+.corrupt-blink {
+  animation: corruptBlink 0.2s infinite;
+}
+
+@keyframes screenGlitchAnim {
+  0% { filter: hue-rotate(0deg) invert(0%); transform: translate(0); }
+  20% { filter: hue-rotate(90deg) invert(100%); transform: translate(-5px, 2px); }
+  40% { filter: hue-rotate(-90deg) invert(0%); transform: translate(5px, -2px); }
+  60% { filter: hue-rotate(180deg) invert(100%); transform: translate(-2px, 5px); }
+  80% { filter: hue-rotate(45deg) invert(0%); transform: translate(2px, -5px); }
+  100% { filter: hue-rotate(0deg) invert(0%); transform: translate(0); }
+}
+
+.screen-glitch {
+  animation: screenGlitchAnim 0.2s infinite;
+  pointer-events: none;
+}
