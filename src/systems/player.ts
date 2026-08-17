@@ -14,6 +14,8 @@ export class PlayerController {
   private sprintMultiplier = 1.5;
   private jumpImpulse = 7;
   private isGrounded = false;
+  private lastUnlockTime = 0;
+  private readonly cooldownMs = 150;
 
   constructor(
     camera: THREE.Camera,
@@ -29,12 +31,19 @@ export class PlayerController {
     const hud = document.getElementById('hud');
 
     instructions?.addEventListener('click', () => {
-      try {
-        const p = (this.controls as any).lock();
-        if (p && typeof p.catch === 'function') {
-          p.catch(() => { });
+      const elapsed = performance.now() - this.lastUnlockTime;
+      const remaining = Math.max(0, this.cooldownMs - elapsed);
+
+      setTimeout(() => {
+        if (!this.controls.isLocked) {
+          try {
+            const p = (this.controls as any).lock();
+            if (p && typeof p.catch === 'function') {
+              p.catch(() => { });
+            }
+          } catch (_) { }
         }
-      } catch (_) { }
+      }, remaining);
     });
 
     this.controls.addEventListener('lock', () => {
@@ -43,6 +52,7 @@ export class PlayerController {
     });
 
     this.controls.addEventListener('unlock', () => {
+      this.lastUnlockTime = performance.now();
       const isTerminalOpen = useGameStore.getState().isTerminalOpen;
 
       if (!isTerminalOpen) {
@@ -73,16 +83,8 @@ export class PlayerController {
   }
 
   public update(_delta: number) {
-    if (!this.controls.isLocked) return;
-
-    const moveForward = this.input.isKeyDown('KeyW');
-    const moveBackward = this.input.isKeyDown('KeyS');
-    const moveLeft = this.input.isKeyDown('KeyA');
-    const moveRight = this.input.isKeyDown('KeyD');
-    const isSprinting = this.input.isKeyDown('ShiftLeft') || this.input.isKeyDown('ShiftRight');
-    const wantJump = this.input.isKeyDown('Space');
-
-    const currentSpeed = isSprinting ? this.baseSpeed * this.sprintMultiplier : this.baseSpeed;
+    const isTerminalOpen = useGameStore.getState().isTerminalOpen;
+    const canControl = this.controls.isLocked && !isTerminalOpen;
 
     if (this.rigidBody && this.world) {
       const linvel = this.rigidBody.linvel();
@@ -101,52 +103,67 @@ export class PlayerController {
       // Player is grounded if ray hits a surface right below feet AND is not actively jumping upwards
       this.isGrounded = hit !== null && linvel.y <= 0.1;
 
-      // Calculate camera orientation direction vectors
-      const frontDir = new THREE.Vector3();
-      this.controls.getDirection(frontDir);
-      frontDir.y = 0; // Flatten movement to XZ plane
-      frontDir.normalize();
+      if (canControl) {
+        const moveForward = this.input.isKeyDown('KeyW');
+        const moveBackward = this.input.isKeyDown('KeyS');
+        const moveLeft = this.input.isKeyDown('KeyA');
+        const moveRight = this.input.isKeyDown('KeyD');
+        const isSprinting = this.input.isKeyDown('ShiftLeft') || this.input.isKeyDown('ShiftRight');
+        const wantJump = this.input.isKeyDown('Space');
 
-      // Vector pointing right relative to camera view
-      const rightDir = new THREE.Vector3(-frontDir.z, 0, frontDir.x);
+        const currentSpeed = isSprinting ? this.baseSpeed * this.sprintMultiplier : this.baseSpeed;
 
-      const moveDir = new THREE.Vector3();
-      if (moveForward) moveDir.add(frontDir);
-      if (moveBackward) moveDir.sub(frontDir);
-      if (moveRight) moveDir.add(rightDir);
-      if (moveLeft) moveDir.sub(rightDir);
+        // Calculate camera orientation direction vectors
+        const frontDir = new THREE.Vector3();
+        this.controls.getDirection(frontDir);
+        frontDir.y = 0; // Flatten movement to XZ plane
+        frontDir.normalize();
 
-      if (moveDir.lengthSq() > 0) {
-        moveDir.normalize();
+        // Vector pointing right relative to camera view
+        const rightDir = new THREE.Vector3(-frontDir.z, 0, frontDir.x);
+
+        const moveDir = new THREE.Vector3();
+        if (moveForward) moveDir.add(frontDir);
+        if (moveBackward) moveDir.sub(frontDir);
+        if (moveRight) moveDir.add(rightDir);
+        if (moveLeft) moveDir.sub(rightDir);
+
+        if (moveDir.lengthSq() > 0) {
+          moveDir.normalize();
+        }
+
+        // Apply horizontal physics velocity
+        const targetVx = moveDir.x * currentSpeed;
+        const targetVz = moveDir.z * currentSpeed;
+
+        let targetVy = linvel.y;
+
+        // Handle Jumping
+        if (wantJump && this.isGrounded) {
+          targetVy = this.jumpImpulse;
+          this.isGrounded = false;
+        }
+
+        this.rigidBody.setLinvel({ x: targetVx, y: targetVy, z: targetVz }, true);
       }
 
-      // Apply horizontal physics velocity
-      const targetVx = moveDir.x * currentSpeed;
-      const targetVz = moveDir.z * currentSpeed;
-
-      let targetVy = linvel.y;
-
-      // console messages
-      console.log("playerPos.x: ", Math.round(playerPos.x), "playerPos.y: ", Math.round(playerPos.y), "playerPos.z: ", Math.round(playerPos.z));
-
-      // Handle Jumping
-      if (wantJump && this.isGrounded) {
-        targetVy = this.jumpImpulse;
-        this.isGrounded = false;
-      }
-
-      this.rigidBody.setLinvel({ x: targetVx, y: targetVy, z: targetVz }, true);
-
-      // Sync camera position with physics body (eye height at top of capsule +0.7m)
+      // ALWAYS sync camera position with physics body (eye height at top of capsule +0.7m)
       const newPos = this.rigidBody.translation();
       this.controls.object.position.set(newPos.x, newPos.y + 0.7, newPos.z);
     } else {
-      // Fallback if physics disabled
-      const speed = currentSpeed * _delta;
-      if (moveForward) this.controls.moveForward(speed);
-      if (moveBackward) this.controls.moveForward(-speed);
-      if (moveLeft) this.controls.moveRight(-speed);
-      if (moveRight) this.controls.moveRight(speed);
+      if (canControl) {
+        const moveForward = this.input.isKeyDown('KeyW');
+        const moveBackward = this.input.isKeyDown('KeyS');
+        const moveLeft = this.input.isKeyDown('KeyA');
+        const moveRight = this.input.isKeyDown('KeyD');
+        const isSprinting = this.input.isKeyDown('ShiftLeft') || this.input.isKeyDown('ShiftRight');
+        const currentSpeed = isSprinting ? this.baseSpeed * this.sprintMultiplier : this.baseSpeed;
+        const speed = currentSpeed * _delta;
+        if (moveForward) this.controls.moveForward(speed);
+        if (moveBackward) this.controls.moveForward(-speed);
+        if (moveLeft) this.controls.moveRight(-speed);
+        if (moveRight) this.controls.moveRight(speed);
+      }
     }
   }
 }

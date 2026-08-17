@@ -16,7 +16,12 @@ export class TerminalSystem {
     inputManager.on((event) => {
       if (event.key === '|') {
         event.preventDefault();
-        this.toggle();
+        if (this.isOpen) {
+          this.close();
+        } else if (document.pointerLockElement !== null) {
+          // Only allow opening terminal from active gameplay, not when game is paused
+          this.open();
+        }
       } else if (event.key === 'Escape' && this.isOpen) {
         event.preventDefault();
         this.close();
@@ -75,12 +80,25 @@ export class TerminalSystem {
     this.container.style.display = 'none';
     this.inputField.blur();
 
-    try {
-      const p = document.body.requestPointerLock() as any;
-      if (p && typeof p.catch === 'function') {
-        p.catch(() => { });
+    // Small 200ms debounce buffer to satisfy Chrome/Firefox rate limit after exiting lock
+    setTimeout(() => {
+      if (!this.isOpen && !document.pointerLockElement) {
+        try {
+          const p = document.body.requestPointerLock() as any;
+          if (p && typeof p.catch === 'function') {
+            p.catch(() => {
+              const isTerminalOpen = useGameStore.getState().isTerminalOpen;
+              if (!isTerminalOpen && !document.pointerLockElement) {
+                const instructions = document.getElementById('instructions');
+                const hud = document.getElementById('hud');
+                if (instructions) instructions.style.display = 'flex';
+                if (hud) hud.style.display = 'none';
+              }
+            });
+          }
+        } catch (_) { }
       }
-    } catch (_) { }
+    }, 200);
   }
 
   public toggle() {

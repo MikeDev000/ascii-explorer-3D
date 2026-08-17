@@ -9,6 +9,9 @@ interface GameState {
 
   isTerminalOpen: boolean;
   setTerminalOpen: (isOpen: boolean) => void;
+
+  battery: number;
+  setBattery: (battery: number) => void;
 }
 
 export const useGameStore = createStore<GameState>((set) => ({
@@ -20,4 +23,7 @@ export const useGameStore = createStore<GameState>((set) => ({
 
   isTerminalOpen: false,
   setTerminalOpen: (isTerminalOpen: boolean) => set({ isTerminalOpen }),
+
+  battery: 100,
+  setBattery: (battery: number) => set({ battery }),
 }));

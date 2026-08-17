@@ -41,6 +41,10 @@ async function main() {
   let frames = 0;
   let lastFpsTime = lastTime;
   const fpsElement = document.getElementById('fps');
+  const batteryUi = document.getElementById('battery-ui');
+  const batteryBar = document.getElementById('battery-bar');
+  const batteryText = document.getElementById('battery-text');
+  let hasPlayedGlitch = false;
 
   function animate(time: number) {
     requestAnimationFrame(animate);
@@ -55,6 +59,40 @@ async function main() {
     map?.update(delta);
     player.update(delta);
     lamp.update(delta);
+
+    // Sync Battery HUD
+    const batteryLevel = useGameStore.getState().battery;
+    if (batteryBar && batteryText && batteryUi) {
+      batteryBar.style.width = `${batteryLevel}%`;
+      batteryText.textContent = `${Math.ceil(batteryLevel)}%`;
+      
+      // Cyberpunk color logic
+      if (batteryLevel < 20) {
+        batteryBar.style.backgroundColor = '#ff003c';
+        batteryBar.style.boxShadow = '0 0 10px #ff003c';
+        batteryUi.classList.add('battery-critical');
+
+        if (!hasPlayedGlitch) {
+          hasPlayedGlitch = true;
+          batteryUi.classList.add('battery-low-glitch');
+          setTimeout(() => {
+            batteryUi.classList.remove('battery-low-glitch');
+          }, 2000);
+        }
+      } else {
+        // Reset glitch trigger when battery is recharged above 20%
+        hasPlayedGlitch = false;
+        batteryUi.classList.remove('battery-critical', 'battery-low-glitch');
+
+        if (batteryLevel < 50) {
+          batteryBar.style.backgroundColor = '#ffb300';
+          batteryBar.style.boxShadow = '0 0 10px #ffb300';
+        } else {
+          batteryBar.style.backgroundColor = '#0ff';
+          batteryBar.style.boxShadow = '0 0 10px #0ff';
+        }
+      }
+    }
 
     // Render ASCII post-processed scene
     effect.render(scene, camera);

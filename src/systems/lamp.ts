@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { InputManager } from './input';
+import { useGameStore } from '../store/gameStore';
 
 export const SharedUniforms = {
   uLampOn: { value: 0.0 }
@@ -8,6 +9,10 @@ export const SharedUniforms = {
 export class LampSystem {
   private spotLight: THREE.SpotLight;
   private isOn: boolean = false;
+  private timeOn: number = 0;
+  
+  // k constant for quadratic drain: 100% drain in 17 seconds -> 100 / (17^2) ≈ 0.346
+  private readonly drainK = 100 / (17 * 17);
 
   constructor(camera: THREE.Camera, input: InputManager) {
     // Green terminal color as requested
@@ -25,7 +30,13 @@ export class LampSystem {
     input.on((event) => {
       if (event.repeat) return;
       if (event.key.toLowerCase() === 'f') {
-        this.toggle();
+        // Only toggle lamp during active gameplay (when pointer lock is active)
+        if (document.pointerLockElement !== null) {
+          const state = useGameStore.getState();
+          if (state.battery > 0) {
+            this.toggle();
+          }
+        }
       }
     });
   }
@@ -36,7 +47,27 @@ export class LampSystem {
     SharedUniforms.uLampOn.value = this.isOn ? 1.0 : 0.0;
   }
 
-  public update(_delta: number) {
-    // Future battery drain logic here
+  public update(delta: number) {
+    const store = useGameStore.getState();
+    
+    if (this.isOn) {
+      // Heat up (increase continuous usage time)
+      this.timeOn += delta;
+      
+      // Calculate instantaneous drain rate (derivative of k * t^2 -> 2 * k * t)
+      const drainRate = 2 * this.drainK * this.timeOn;
+      
+      // Drain battery
+      const newBattery = Math.max(0, store.battery - drainRate * delta);
+      store.setBattery(newBattery);
+      
+      // Auto-turn off if empty
+      if (newBattery <= 0) {
+        this.toggle();
+      }
+    } else {
+      // Cool down twice as fast when off
+      this.timeOn = Math.max(0, this.timeOn - delta * 2);
+    }
   }
 }
