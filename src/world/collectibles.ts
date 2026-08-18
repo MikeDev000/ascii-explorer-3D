@@ -28,9 +28,9 @@ export class CollectiblesSystem {
       id: 'cap_1',
       type: 'cap',
       name: 'Cycle_Cap.o',
-      ascii: '[~~]',
+      ascii: '[~~~~]',
       corrupted: false
-    }, new THREE.Vector3(0, 1, -3));
+    }, new THREE.Vector3(2, 1, -3));
 
     this.spawnItem({
       id: 'ptr_1',
@@ -38,7 +38,7 @@ export class CollectiblesSystem {
       name: 'Raw_Pointer.h',
       ascii: '{;::;>}',
       corrupted: false
-    }, new THREE.Vector3(1, 1, -3));
+    }, new THREE.Vector3(5, 1, -3));
 
     this.spawnItem({
       id: 'hex_normal_1',
@@ -55,7 +55,7 @@ export class CollectiblesSystem {
       name: 'Hex_Payload.bin',
       ascii: '0x?',
       corrupted: true
-    }, new THREE.Vector3(-2, 1, -3));
+    }, new THREE.Vector3(-4, 1, -3));
   }
 
   private spawnItem(data: Collectible, position: THREE.Vector3) {

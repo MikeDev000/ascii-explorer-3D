@@ -111,9 +111,9 @@ export class TerminalSystem {
 
   private print(text: string, isCommand: boolean = false) {
     const line = document.createElement('div');
-    line.textContent = isCommand ? `> ${text}` : text;
+    line.textContent = isCommand ? `> ${text}` : `\t${text}`;
     this.output.appendChild(line);
-    this.output.scrollTop = this.output.scrollHeight;
+    this.container.scrollTop = this.container.scrollHeight;
   }
 
   private executeCommand(cmd: string) {
@@ -180,7 +180,7 @@ export class TerminalSystem {
       return;
     }
 
-    if (['make battery --unsafebuild', 'build cell -u'].includes(fullCmd)) {
+    if (['make bat0 --unsafebuild', 'build cell -u'].includes(fullCmd)) {
       const inv = store.inventory;
       if (inv.length >= 2) {
         const toRemove = [inv[0].id, inv[1].id];
@@ -201,21 +201,25 @@ export class TerminalSystem {
         break;
       case 'help':
         this.print('Commands:');
-        this.print('  hello - Says hello');
-        this.print('  help - Shows this message');
-        this.print('  cat [objeto] - Lee el contenido o el estado de un objeto');
-        this.print('  set [variable] = [valor] - Cambia el valor de una propiedad del mapa o jugador. Ej: gravity');
-        this.print('  chmod [permiso] [objeto] - Cambia las propiedades de acceso de un muro o puerta');
-        this.print('  free - Libera la memoria cercana, destruye obstaculos menores alrededor');
-        this.print('  kill -9 <proceso> - Elimina un proceso/entidad/obstaculo de código corrupto');
-        this.print('  ls /inventory/ - Lists collected components');
-        this.print('  sanitize 0x -fix - Cleans corrupted Hex_Payload');
-        this.print('  build cell - Crafts 100% battery (Requires 3 items)');
-        this.print('  cell -u - Emergency craft 40% battery (Requires 2 items)');
+        this.print('hello - Says hello');
+        this.print('help - Shows this message');
+        this.print('cat [objeto] - Lee el contenido o el estado de un objeto');
+        this.print('set [variable] = [valor] - Cambia el valor de una propiedad del mapa o jugador. Ej: gravity');
+        this.print('chmod [permiso] [objeto] - Cambia las propiedades de acceso de un muro o puerta');
+        this.print('free - Libera la memoria cercana, destruye obstaculos menores alrededor');
+        this.print('kill -9 <proceso> - Elimina un proceso/entidad/obstaculo de código corrupto');
+        this.print('ls /inventory/ - Lists collected components');
+        this.print('sanitize 0x -fix - Cleans corrupted Hex_Payload');
+        this.print('build cell - Crafts 100% battery (Requires 3 items)');
+        this.print('cell -u - Emergency craft 40% battery (Requires 2 items)');
         break;
       case 'resetbattery':
         useGameStore.getState().setBattery(100);
         this.print('Battery reset to 100%');
+        break;
+      case 'clear':
+      case 'cls':
+        this.output.innerHTML = '';
         break;
       default:
         this.print(`Command not found: ${command}`);

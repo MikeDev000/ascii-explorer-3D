@@ -83,25 +83,44 @@ html, body {
 /* Terminal Styles */
 #terminal {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 7.5%;
-  background-color: rgba(0, 0, 0, 0.85);
+  top: 55px;
+  bottom: 55px;
+  left: 65px;
+  right: 1400px;
   z-index: 20;
-  padding: 10px;
+  padding: 20px;
   box-sizing: border-box;
   font-family: 'JetBrains Mono', monospace;
-  color: #0f0; /* Terminal Green */
-  overflow-y: auto;
+  color: #fff;
+  font-weight: bold;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  /* Scrollbar styling for a cleaner look */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+}
+
+#terminal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/images/terminal-ascii-100opacity.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.4;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 16px;
 }
 
 #terminal-output {
-  flex-grow: 1;
-  overflow-y: auto;
-  margin-bottom: 5px;
   white-space: pre-wrap;
 }
 
@@ -117,8 +136,9 @@ html, body {
 #terminal-input {
   background: transparent;
   border: none;
-  color: #0f0;
+  color: #fff;
   font-family: 'JetBrains Mono', monospace;
+  font-weight: bold;
   font-size: 1rem;
   flex-grow: 1;
   outline: none;

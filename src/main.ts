@@ -38,7 +38,7 @@ async function main() {
   const player = new PlayerController(camera, document.body, input, physicsWorld);
   const lamp = new LampSystem(camera, input);
   const terminal = new TerminalSystem(input);
-  
+
   // Use a hacky way to expose player's rigidBody translation by using any cast
   const collectibles = new CollectiblesSystem(scene, camera, (player as any).rigidBody);
 
@@ -73,7 +73,7 @@ async function main() {
     if (batteryBar && batteryText && batteryUi) {
       batteryBar.style.width = `${batteryLevel}%`;
       batteryText.textContent = `${Math.ceil(batteryLevel)}%`;
-      
+
       // Cyberpunk color logic
       if (batteryLevel < 20) {
         batteryBar.style.backgroundColor = '#ff003c';
@@ -123,7 +123,7 @@ async function main() {
       const fps = Math.round((frames * 1000) / (time - lastFpsTime));
       useGameStore.getState().setFps(fps);
       if (fpsElement) fpsElement.textContent = `FPS: ${fps}`;
-      
+
       frames = 0;
       lastFpsTime = time;
     }
