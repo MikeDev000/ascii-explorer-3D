@@ -5,7 +5,6 @@ export class CollectiblesSystem {
   private activeItems: {
     data: Collectible;
     position: THREE.Vector3;
-    element: HTMLElement;
     group: THREE.Group;
     coreMesh: THREE.Mesh;
     wireMesh: THREE.Mesh;
@@ -16,6 +15,10 @@ export class CollectiblesSystem {
   private container: HTMLElement;
   private camera: THREE.Camera;
   private playerBody: { getPhysicsTranslation: () => { x: number, y: number, z: number } } | null = null;
+  
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
+  private onResize: () => void;
 
   // Cached objects for math operations to prevent GC thrashing
   private _projScreenMatrix = new THREE.Matrix4();
@@ -28,6 +31,25 @@ export class CollectiblesSystem {
     this.camera = camera;
     this.playerBody = playerBody;
     this.container = document.getElementById('collectibles-container')!;
+
+    // Setup Canvas Overlay
+    this.canvas = document.createElement('canvas');
+    this.canvas.style.position = 'absolute';
+    this.canvas.style.top = '0';
+    this.canvas.style.left = '0';
+    this.canvas.style.width = '100vw';
+    this.canvas.style.height = '100vh';
+    this.canvas.style.pointerEvents = 'none';
+    this.canvas.style.zIndex = '10';
+    this.container.appendChild(this.canvas);
+    this.ctx = this.canvas.getContext('2d')!;
+
+    this.onResize = () => {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', this.onResize);
+    this.onResize(); // Initial sizing
 
     // Spawn the 4 specific dev items right in front of the player (around z = -3)
     this.spawnItem({
@@ -65,28 +87,7 @@ export class CollectiblesSystem {
   }
 
   private spawnItem(data: Collectible, position: THREE.Vector3) {
-    // 1. Create Floating HUD Badge securely using DOM elements & textContent
-    const el = document.createElement('div');
-    el.className = 'collectible';
-    if (data.corrupted) {
-      el.classList.add('corrupt-blink');
-    }
-
-    const iconSpan = document.createElement('span');
-    iconSpan.style.fontSize = '10px';
-    iconSpan.style.opacity = '0.8';
-    iconSpan.textContent = '◆';
-
-    const nameSpan = document.createElement('span');
-    nameSpan.style.fontSize = '11px';
-    nameSpan.style.opacity = '0.9';
-    nameSpan.textContent = data.name;
-
-    el.appendChild(iconSpan);
-    el.appendChild(document.createTextNode(` ${data.ascii} `));
-    el.appendChild(nameSpan);
-
-    this.container.appendChild(el);
+    // 1. DOM Elements removed. Using Canvas Overlay instead.
 
     // 2. Create 3D Multi-Layered Object Group
     const group = new THREE.Group();
@@ -128,12 +129,26 @@ export class CollectiblesSystem {
     this.activeItems.push({
       data,
       position,
-      element: el,
       group,
       coreMesh,
       wireMesh,
       light
     });
+  }
+
+  public dispose() {
+    // Cleanup for Lifecycle Manager (Fase 5 preparation)
+    window.removeEventListener('resize', this.onResize);
+    if (this.canvas && this.canvas.parentElement) {
+      this.canvas.parentElement.removeChild(this.canvas);
+    }
+    
+    // Dispose all active 3D items
+    for (const item of this.activeItems) {
+      this.scene.remove(item.group);
+      this.disposeItem(item);
+    }
+    this.activeItems = [];
   }
 
   private disposeItem(item: any) {
@@ -162,6 +177,9 @@ export class CollectiblesSystem {
     this._frustum.setFromProjectionMatrix(this._projScreenMatrix);
 
     const now = performance.now() * 0.003;
+    
+    // Clear canvas every frame
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     for (let i = this.activeItems.length - 1; i >= 0; i--) {
       const item = this.activeItems[i];
@@ -170,7 +188,6 @@ export class CollectiblesSystem {
       if (this._playerVec.distanceTo(item.group.position) < 1.2) {
         // Collect it
         useGameStore.getState().addCollectible(item.data);
-        item.element.remove();
         this.scene.remove(item.group);
         this.disposeItem(item);
         this.activeItems.splice(i, 1);
@@ -197,13 +214,42 @@ export class CollectiblesSystem {
         this._tempV.copy(item.group.position);
         this._tempV.project(this.camera);
 
-        item.element.style.display = 'block';
         const x = (this._tempV.x * 0.5 + 0.5) * window.innerWidth;
         const y = (-(this._tempV.y * 0.5) + 0.5) * window.innerHeight;
-        item.element.style.left = `${x}px`;
-        item.element.style.top = `${y}px`;
-      } else {
-        item.element.style.display = 'none';
+        
+        // Draw the badge on canvas
+        this.ctx.font = 'bold 13px "JetBrains Mono", monospace';
+        const text = `◆  ${item.data.ascii}  ${item.data.name}`;
+        const metrics = this.ctx.measureText(text);
+        const width = metrics.width + 16;
+        const height = 24;
+        
+        const boxX = x - width / 2;
+        const boxY = y - 100 - height / 2; // Float above the object
+        
+        // Handle colors for corruption blinking
+        let mainColor = '#00ffff';
+        let strokeColor = '#ff00ff';
+        let boxColor = 'rgba(12, 5, 24, 0.85)';
+        
+        if (item.data.corrupted) {
+          if (Math.sin(performance.now() * 0.02) > 0) {
+            mainColor = '#ff003c';
+            strokeColor = '#ff003c';
+            boxColor = 'rgba(30, 0, 10, 0.9)';
+          }
+        }
+        
+        this.ctx.fillStyle = boxColor;
+        this.ctx.fillRect(boxX, boxY, width, height);
+        this.ctx.strokeStyle = strokeColor;
+        this.ctx.lineWidth = 1.5;
+        this.ctx.strokeRect(boxX, boxY, width, height);
+        
+        this.ctx.fillStyle = mainColor;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(text, x, boxY + height / 2 + 1); // +1 for visual baseline adjustment
       }
     }
   }
