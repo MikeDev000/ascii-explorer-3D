@@ -3,10 +3,22 @@ type KeyDownListener = (event: KeyboardEvent) => void;
 export class InputManager {
   private keys: Map<string, boolean> = new Map();
   private listeners: KeyDownListener[] = [];
+  
+  private boundOnKeyDown: (event: KeyboardEvent) => void;
+  private boundOnKeyUp: (event: KeyboardEvent) => void;
 
   constructor() {
-    window.addEventListener('keydown', this.onKeyDown.bind(this));
-    window.addEventListener('keyup', this.onKeyUp.bind(this));
+    this.boundOnKeyDown = this.onKeyDown.bind(this);
+    this.boundOnKeyUp = this.onKeyUp.bind(this);
+    
+    window.addEventListener('keydown', this.boundOnKeyDown);
+    window.addEventListener('keyup', this.boundOnKeyUp);
+  }
+
+  public dispose() {
+    window.removeEventListener('keydown', this.boundOnKeyDown);
+    window.removeEventListener('keyup', this.boundOnKeyUp);
+    this.listeners = [];
   }
 
   public on(listener: KeyDownListener) {

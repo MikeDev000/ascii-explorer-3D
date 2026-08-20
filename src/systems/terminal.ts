@@ -7,6 +7,8 @@ export class TerminalSystem {
   private output: HTMLElement;
   private inputField: HTMLInputElement;
   private isOpen: boolean = false;
+  
+  private boundOnMouseDown: (e: MouseEvent) => void;
 
   constructor(inputManager: InputManager) {
     this.container = document.getElementById('terminal')!;
@@ -58,11 +60,17 @@ export class TerminalSystem {
     });
 
     // Close terminal when clicking anywhere outside the terminal window in the game
-    window.addEventListener('mousedown', (e) => {
+    this.boundOnMouseDown = (e: MouseEvent) => {
       if (this.isOpen && !this.container.contains(e.target as Node)) {
         this.close();
       }
-    });
+    };
+    window.addEventListener('mousedown', this.boundOnMouseDown);
+  }
+
+  public dispose() {
+    this.close();
+    window.removeEventListener('mousedown', this.boundOnMouseDown);
   }
 
   public open() {
