@@ -85,8 +85,8 @@ html, body {
   position: absolute;
   top: 55px;
   bottom: 55px;
-  left: 65px;
-  right: 1400px;
+  left: 50px;
+  width: min(850px, 85vw);
   z-index: 20;
   padding: 20px;
   box-sizing: border-box;

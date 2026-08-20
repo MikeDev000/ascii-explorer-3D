@@ -1,5 +1,6 @@
 import { InputManager } from './input';
 import { useGameStore } from '../store/gameStore';
+import { CraftingService } from '../services/CraftingService';
 
 export class TerminalSystem {
   private container: HTMLElement;
@@ -149,48 +150,19 @@ export class TerminalSystem {
     }
 
     if (['build cell', 'make bat0', 'compile buffer'].includes(fullCmd)) {
-      const inv = store.inventory;
-      const hasCap = inv.some(i => i.type === 'cap');
-      const hasPtr = inv.some(i => i.type === 'pointer');
-      const hasHex = inv.some(i => i.type === 'hex');
-
-      if (hasCap && hasPtr && hasHex) {
-        // Check corruption
-        const isCorrupted = inv.find(i => i.type === 'hex')?.corrupted;
-
-        // Remove items
-        const toRemove = [
-          inv.find(i => i.type === 'cap')!.id,
-          inv.find(i => i.type === 'pointer')!.id,
-          inv.find(i => i.type === 'hex')!.id,
-        ];
-        store.removeCollectibles(toRemove);
-
-        // Recharge standard
-        window.dispatchEvent(new CustomEvent('lamp-recharge', { detail: { percent: 100, penalty: 0 } }));
-        this.print('SUCCESS: Battery Cell compiled. Buffer restored to 100%.');
-
-        if (isCorrupted) {
-          this.print('WARNING: Corrupted Hex_Payload used. System instability detected!');
-          store.setTriggerGlitch(true);
-        }
-      } else {
-        this.print('ERROR: Insufficient components. Requires: Cycle_Cap.o, Raw_Pointer.h, Hex_Payload.bin.');
+      const result = CraftingService.craftBatteryCell();
+      this.print(result.message);
+      if (result.warning) {
+        this.print(result.warning);
       }
       return;
     }
 
     if (['make bat0 --unsafebuild', 'build cell -u'].includes(fullCmd)) {
-      const inv = store.inventory;
-      if (inv.length >= 2) {
-        const toRemove = [inv[0].id, inv[1].id];
-        store.removeCollectibles(toRemove);
-
-        // Recharge unsafe
-        window.dispatchEvent(new CustomEvent('lamp-recharge', { detail: { percent: 40, penalty: 10 } }));
-        this.print('WARNING: Unsafe build forced. Battery restored to 40%. Severe wear penalty applied.');
-      } else {
-        this.print('ERROR: Requires at least 2 components for emergency patch.');
+      const result = CraftingService.craftUnsafeBattery();
+      this.print(result.message);
+      if (result.warning) {
+        this.print(result.warning);
       }
       return;
     }

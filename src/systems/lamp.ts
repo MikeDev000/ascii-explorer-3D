@@ -9,7 +9,6 @@ export const SharedUniforms = {
 export class LampSystem {
   private spotLight: THREE.SpotLight;
   private isOn: boolean = false;
-  private timeOn: number = 0;
   
   // k constant for quadratic drain: 100% drain in 17 seconds -> 100 / (17^2) ≈ 0.346
   private readonly drainK = 100 / (17 * 17);
@@ -39,14 +38,6 @@ export class LampSystem {
         }
       }
     });
-
-    // Listen for custom recharge events from terminal crafting
-    window.addEventListener('lamp-recharge', ((e: CustomEvent) => {
-      const { percent, penalty } = e.detail;
-      useGameStore.getState().setBattery(percent);
-      // Penalty applies accelerated wear by initializing timeOn to a higher value
-      this.timeOn = penalty; 
-    }) as EventListener);
   }
 
   public toggle() {
@@ -57,17 +48,19 @@ export class LampSystem {
 
   public update(delta: number) {
     const store = useGameStore.getState();
+    let timeOn = store.lampTimeOn;
     
     if (this.isOn) {
       // Heat up (increase continuous usage time)
-      this.timeOn += delta;
+      timeOn += delta;
       
       // Calculate instantaneous drain rate (derivative of k * t^2 -> 2 * k * t)
-      const drainRate = 2 * this.drainK * this.timeOn;
+      const drainRate = 2 * this.drainK * timeOn;
       
       // Drain battery
       const newBattery = Math.max(0, store.battery - drainRate * delta);
       store.setBattery(newBattery);
+      store.setLampTimeOn(timeOn);
       
       // Auto-turn off if empty
       if (newBattery <= 0) {
@@ -75,7 +68,8 @@ export class LampSystem {
       }
     } else {
       // Cool down twice as fast when off
-      this.timeOn = Math.max(0, this.timeOn - delta * 2);
+      timeOn = Math.max(0, timeOn - delta * 2);
+      store.setLampTimeOn(timeOn);
     }
   }
 }

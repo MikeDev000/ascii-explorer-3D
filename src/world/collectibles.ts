@@ -15,9 +15,15 @@ export class CollectiblesSystem {
   private scene: THREE.Scene;
   private container: HTMLElement;
   private camera: THREE.Camera;
-  private playerBody: { translation: () => { x: number, y: number, z: number } } | null = null;
+  private playerBody: { getPhysicsTranslation: () => { x: number, y: number, z: number } } | null = null;
 
-  constructor(scene: THREE.Scene, camera: THREE.Camera, playerBody: any) {
+  // Cached objects for math operations to prevent GC thrashing
+  private _projScreenMatrix = new THREE.Matrix4();
+  private _frustum = new THREE.Frustum();
+  private _tempV = new THREE.Vector3();
+  private _playerVec = new THREE.Vector3();
+
+  constructor(scene: THREE.Scene, camera: THREE.Camera, playerBody: { getPhysicsTranslation: () => { x: number, y: number, z: number } }) {
     this.scene = scene;
     this.camera = camera;
     this.playerBody = playerBody;
@@ -36,7 +42,7 @@ export class CollectiblesSystem {
       id: 'ptr_1',
       type: 'pointer',
       name: 'Raw_Pointer.h',
-      ascii: '{;::;>}',
+      ascii: '{;:;}',
       corrupted: false
     }, new THREE.Vector3(5, 1, -3));
 
@@ -59,13 +65,27 @@ export class CollectiblesSystem {
   }
 
   private spawnItem(data: Collectible, position: THREE.Vector3) {
-    // 1. Create Floating HUD Badge
+    // 1. Create Floating HUD Badge securely using DOM elements & textContent
     const el = document.createElement('div');
     el.className = 'collectible';
     if (data.corrupted) {
       el.classList.add('corrupt-blink');
     }
-    el.innerHTML = `<span style="font-size: 10px; opacity: 0.8;">◆</span> ${data.ascii} <span style="font-size: 11px; opacity: 0.9;">${data.name}</span>`;
+
+    const iconSpan = document.createElement('span');
+    iconSpan.style.fontSize = '10px';
+    iconSpan.style.opacity = '0.8';
+    iconSpan.textContent = '◆';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.style.fontSize = '11px';
+    nameSpan.style.opacity = '0.9';
+    nameSpan.textContent = data.name;
+
+    el.appendChild(iconSpan);
+    el.appendChild(document.createTextNode(` ${data.ascii} `));
+    el.appendChild(nameSpan);
+
     this.container.appendChild(el);
 
     // 2. Create 3D Multi-Layered Object Group
@@ -116,32 +136,43 @@ export class CollectiblesSystem {
     });
   }
 
+  private disposeItem(item: any) {
+    if (item.coreMesh) {
+      item.coreMesh.geometry.dispose();
+      (item.coreMesh.material as THREE.Material).dispose();
+    }
+    if (item.wireMesh) {
+      item.wireMesh.geometry.dispose();
+      (item.wireMesh.material as THREE.Material).dispose();
+    }
+    if (item.light && typeof item.light.dispose === 'function') {
+      item.light.dispose();
+    }
+  }
+
   public update(delta: number = 0.016) {
     if (!this.playerBody) return;
 
-    const pPos = this.playerBody.translation();
-    const playerVec = new THREE.Vector3(pPos.x, pPos.y, pPos.z);
+    const pPos = this.playerBody.getPhysicsTranslation();
+    this._playerVec.set(pPos.x, pPos.y, pPos.z);
 
     // Update camera matrices for accurate projection
     this.camera.updateMatrixWorld();
-    const projScreenMatrix = new THREE.Matrix4();
-    projScreenMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
-    const frustum = new THREE.Frustum();
-    frustum.setFromProjectionMatrix(projScreenMatrix);
+    this._projScreenMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+    this._frustum.setFromProjectionMatrix(this._projScreenMatrix);
 
-    // Temp vector for projection
-    const tempV = new THREE.Vector3();
     const now = performance.now() * 0.003;
 
     for (let i = this.activeItems.length - 1; i >= 0; i--) {
       const item = this.activeItems[i];
 
       // Distance check for collection (1.2 units for responsive pickup)
-      if (playerVec.distanceTo(item.group.position) < 1.2) {
+      if (this._playerVec.distanceTo(item.group.position) < 1.2) {
         // Collect it
         useGameStore.getState().addCollectible(item.data);
         item.element.remove();
         this.scene.remove(item.group);
+        this.disposeItem(item);
         this.activeItems.splice(i, 1);
         continue;
       }
@@ -161,14 +192,14 @@ export class CollectiblesSystem {
       item.light.intensity = 2.0 + Math.sin(now * 2 + i) * 0.8;
 
       // Check if item is in camera view
-      if (frustum.containsPoint(item.group.position)) {
+      if (this._frustum.containsPoint(item.group.position)) {
         // 3D to 2D Screen Projection
-        tempV.copy(item.group.position);
-        tempV.project(this.camera);
+        this._tempV.copy(item.group.position);
+        this._tempV.project(this.camera);
 
         item.element.style.display = 'block';
-        const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
-        const y = (-(tempV.y * 0.5) + 0.5) * window.innerHeight;
+        const x = (this._tempV.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-(this._tempV.y * 0.5) + 0.5) * window.innerHeight;
         item.element.style.left = `${x}px`;
         item.element.style.top = `${y}px`;
       } else {

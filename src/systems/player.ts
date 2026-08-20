@@ -82,6 +82,17 @@ export class PlayerController {
     return this.controls.object.position;
   }
 
+  public getPhysicsTranslation(): { x: number, y: number, z: number } {
+    if (this.rigidBody) {
+      return this.rigidBody.translation();
+    }
+    return { 
+      x: this.controls.object.position.x, 
+      y: this.controls.object.position.y, 
+      z: this.controls.object.position.z 
+    };
+  }
+
   public update(_delta: number) {
     const isTerminalOpen = useGameStore.getState().isTerminalOpen;
     const canControl = this.controls.isLocked && !isTerminalOpen;

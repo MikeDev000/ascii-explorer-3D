@@ -37,10 +37,10 @@ async function main() {
   const input = new InputManager();
   const player = new PlayerController(camera, document.body, input, physicsWorld);
   const lamp = new LampSystem(camera, input);
-  const terminal = new TerminalSystem(input);
+  new TerminalSystem(input);
 
-  // Use a hacky way to expose player's rigidBody translation by using any cast
-  const collectibles = new CollectiblesSystem(scene, camera, (player as any).rigidBody);
+  // Pass player directly, which now conforms to the expected interface
+  const collectibles = new CollectiblesSystem(scene, camera, player);
 
   let lastTime = performance.now();
   let frames = 0;
