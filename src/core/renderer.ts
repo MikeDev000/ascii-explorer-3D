@@ -24,7 +24,13 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
   composer.addPass(fisheyePass);
 
   const asciiChars = " .\'\`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
-  const effect = new AsciiEffect(renderer, asciiChars, {
+
+  // Encapsular la renderización sin inyectar comportamiento destructivo en la instancia global de WebGLRenderer
+  // Creamos un wrapper proxy/heredado del renderer original donde anulamos render() para pasarlo a AsciiEffect
+  const fakeRenderer = Object.create(renderer);
+  fakeRenderer.render = () => { };
+
+  const effect = new AsciiEffect(fakeRenderer as THREE.WebGLRenderer, asciiChars, {
     resolution: 0.15,
     invert: true,
     color: false,
@@ -35,7 +41,7 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
   effect.setSize(window.innerWidth, window.innerHeight);
 
   // Manejador de cambio de tamaño de ventana (Resize) para mantener pantalla completa
-  window.addEventListener('resize', () => {
+  const onResize = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
     if (camera instanceof THREE.PerspectiveCamera) {
@@ -46,7 +52,13 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
     composer.setSize(width, height);
     effect.setSize(width, height);
     fisheyePass.uniforms['uResolution'].value.set(width, height);
-  });
+  };
+
+  window.addEventListener('resize', onResize);
+
+  const cleanup = () => {
+    window.removeEventListener('resize', onResize);
+  };
 
   const appContainer = document.getElementById('app');
   if (appContainer) {
@@ -64,24 +76,11 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
     appContainer.appendChild(renderer.domElement);
   }
 
-  // Intercept effect.render to run post-processing composer first,
-  // then pass the rendered canvas to AsciiEffect without re-rendering the raw scene.
-  const realAsciiRender = effect.render.bind(effect);
-
-  effect.render = function (s: THREE.Scene, c: THREE.Camera) {
-    // 1. Post-processing pipeline (RenderPass + Shaders -> renderer.domElement)
+  // Nueva función limpia de renderizado que no monkey-patchea el renderer global
+  const render = (s: THREE.Scene, c: THREE.Camera) => {
     composer.render();
-
-    // 2. Temporarily bypass renderer.render so AsciiEffect doesn't overwrite the processed canvas
-    const originalRender = renderer.render;
-    renderer.render = () => { };
-
-    // 3. AsciiEffect processes the post-processed canvas
-    realAsciiRender(s, c);
-
-    // 4. Restore original renderer.render
-    renderer.render = originalRender;
+    effect.render(s, c);
   };
 
-  return { renderer, effect, composer };
+  return { renderer, effect, composer, render, cleanup };
 }

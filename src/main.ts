@@ -25,7 +25,7 @@ async function main() {
   const scene = createScene();
   const camera = createCamera();
   scene.add(camera);
-  const { effect } = createRenderer(scene, camera);
+  const { render } = createRenderer(scene, camera);
   setupLighting(scene);
 
   // Initialize Rapier3D physics engine
@@ -116,7 +116,7 @@ async function main() {
     }
 
     // Render ASCII post-processed scene
-    effect.render(scene, camera);
+    render(scene, camera);
 
     frames++;
     if (time > lastFpsTime + 1000) {
