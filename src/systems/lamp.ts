@@ -46,6 +46,12 @@ export class LampSystem {
     SharedUniforms.uLampOn.value = this.isOn ? 1.0 : 0.0;
   }
 
+  public dispose(camera: THREE.Camera) {
+    camera.remove(this.spotLight);
+    camera.remove(this.spotLight.target);
+    this.spotLight.dispose();
+  }
+
   public update(delta: number) {
     const store = useGameStore.getState();
     let timeOn = store.lampTimeOn;

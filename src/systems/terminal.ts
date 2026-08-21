@@ -7,7 +7,7 @@ export class TerminalSystem {
   private output: HTMLElement;
   private inputField: HTMLInputElement;
   private isOpen: boolean = false;
-  
+
   private boundOnMouseDown: (e: MouseEvent) => void;
 
   constructor(inputManager: InputManager) {

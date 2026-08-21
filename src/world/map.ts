@@ -15,7 +15,7 @@ const levelData = {
     { x: 0, y: 1.5, z: -8, size: 3, hasMessage: true }
   ],
   dynamicSpheres: [
-    { x: -6, y: 3.0, z: -8, radius: 1 }
+    { x: -6, y: 1.25, z: -8, radius: 1 }
   ]
 };
 
@@ -23,19 +23,21 @@ const levelData = {
 class EntityFactory {
   private scene: THREE.Scene;
   private world?: RAPIER.World;
-  
+
   // Materiales cacheados
   private floorMat: THREE.Material;
   private wallMat: THREE.Material;
   private cubeMat: THREE.Material;
   private sphereMat: THREE.Material;
-  
+
   public dynamicEntities: { mesh: THREE.Object3D, body: RAPIER.RigidBody }[] = [];
+  private allMeshes: THREE.Mesh[] = [];
+  private allBodies: RAPIER.RigidBody[] = [];
 
   constructor(scene: THREE.Scene, world?: RAPIER.World) {
     this.scene = scene;
     this.world = world;
-    
+
     // Preparar textura del suelo procedural
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -52,7 +54,7 @@ class EntityFactory {
     floorTexture.wrapT = THREE.RepeatWrapping;
     floorTexture.repeat.set(25, 25);
     floorTexture.magFilter = THREE.NearestFilter;
-    
+
     // Instanciar materiales una sola vez
     this.floorMat = new THREE.MeshPhongMaterial({ map: floorTexture, shininess: 10 });
     this.wallMat = new THREE.MeshPhongMaterial({ color: 0xaaaaaa, shininess: 60, specular: 0x222222 });
@@ -66,12 +68,14 @@ class EntityFactory {
     mesh.rotation.x = -Math.PI / 2;
     mesh.receiveShadow = true;
     this.scene.add(mesh);
+    this.allMeshes.push(mesh);
 
     if (this.world) {
       const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(0, -0.1, 0);
       const body = this.world.createRigidBody(bodyDesc);
       const colliderDesc = RAPIER.ColliderDesc.cuboid(width / 2, 0.1, depth / 2);
       this.world.createCollider(colliderDesc, body);
+      this.allBodies.push(body);
     }
   }
 
@@ -82,12 +86,14 @@ class EntityFactory {
     mesh.receiveShadow = true;
     mesh.castShadow = true;
     this.scene.add(mesh);
+    this.allMeshes.push(mesh);
 
     if (this.world) {
       const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(x, y, z);
       const body = this.world.createRigidBody(bodyDesc);
       const colliderDesc = RAPIER.ColliderDesc.cuboid(w / 2, h / 2, d / 2);
       this.world.createCollider(colliderDesc, body);
+      this.allBodies.push(body);
     }
   }
 
@@ -98,6 +104,7 @@ class EntityFactory {
     mesh.receiveShadow = true;
     mesh.castShadow = true;
     this.scene.add(mesh);
+    this.allMeshes.push(mesh);
 
     if (hasMessage) {
       const msg = new HiddenMessage("HELLO\nWORLD", size * 0.83, size * 0.83);
@@ -110,6 +117,7 @@ class EntityFactory {
       const body = this.world.createRigidBody(bodyDesc);
       const colliderDesc = RAPIER.ColliderDesc.cuboid(size / 2, size / 2, size / 2);
       this.world.createCollider(colliderDesc, body);
+      this.allBodies.push(body);
     }
   }
 
@@ -120,6 +128,7 @@ class EntityFactory {
     mesh.receiveShadow = true;
     mesh.castShadow = true;
     this.scene.add(mesh);
+    this.allMeshes.push(mesh);
 
     if (this.world) {
       const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
@@ -132,9 +141,34 @@ class EntityFactory {
         .setFriction(0.4)
         .setRestitution(0.7); // Bouncy ball!
       this.world.createCollider(colliderDesc, body);
-      
+
+      body.wakeUp(); // Asegurar que inicie despierta y la gravedad actúe de inmediato
+
       this.dynamicEntities.push({ mesh, body });
+      this.allBodies.push(body);
     }
+  }
+
+  public dispose() {
+    this.floorMat.dispose();
+    this.wallMat.dispose();
+    this.cubeMat.dispose();
+    this.sphereMat.dispose();
+
+    for (const mesh of this.allMeshes) {
+      this.scene.remove(mesh);
+      mesh.geometry.dispose();
+    }
+
+    if (this.world) {
+      for (const body of this.allBodies) {
+        this.world.removeRigidBody(body);
+      }
+    }
+
+    this.allMeshes = [];
+    this.allBodies = [];
+    this.dynamicEntities = [];
   }
 }
 
@@ -163,6 +197,9 @@ export function createMap(scene: THREE.Scene, world?: RAPIER.World) {
         mesh.position.set(pos.x, pos.y, pos.z);
         mesh.quaternion.set(rot.x, rot.y, rot.z, rot.w);
       });
+    },
+    dispose: () => {
+      factory.dispose();
     }
   };
 }

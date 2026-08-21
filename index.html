@@ -23,19 +23,67 @@
       </div>
     </div>
 
+    <!-- Controles y HUD en juego -->
     <div id="collectibles-container"></div>
-
-    <div id="instructions">
-      <h1>ASCII Explorer</h1>
-      <p>Click to Start</p>
-      <p>W, A, S, D = Move<br>Mouse = Look<br>Shift = Sprint</p>
-    </div>
 
     <div id="terminal" style="display: none;">
       <div id="terminal-output"></div>
       <div class="terminal-input-line">
         <span class="prompt">&gt;</span>
         <input type="text" id="terminal-input" autocomplete="off" spellcheck="false" />
+      </div>
+    </div>
+
+    <!-- Menús Overlay (Fase 5) -->
+    <div id="main-menu" class="overlay-menu">
+      <div class="menu-card">
+        <div class="menu-header">
+          <div class="ascii-logo">
+    ___   _____ _____ _____ _____ 
+   / _ \ /  ___/  __ \_   _|_   _|
+  / /_\ \\ `--.| /  \/ | |   | |  
+  |  _  | `--. \ |     | |   | |  
+  | | | |/\__/ / \__/\_| |_ _| |_ 
+  \_| |_/\____/ \____/\___/ \___/ 
+          </div>
+          <h1 class="glitch-text" data-text="EXPLORER 3D">EXPLORER 3D</h1>
+          <div class="sys-status">SYS_STATUS: ONLINE // RAPIER3D ACTIVE</div>
+        </div>
+
+        <div class="controls-guide">
+          <div class="guide-row"><span class="key-badge">W A S D</span> <span>Moverse</span></div>
+          <div class="guide-row"><span class="key-badge">MOUSE</span> <span>Mirar / Apuntar</span></div>
+          <div class="guide-row"><span class="key-badge">SHIFT</span> <span>Acelerar</span></div>
+          <div class="guide-row"><span class="key-badge">ESPACIO</span> <span>Saltar</span></div>
+          <div class="guide-row"><span class="key-badge">F</span> <span>Linterna UV</span></div>
+          <div class="guide-row"><span class="key-badge">ESC</span> <span>Pausar</span></div>
+        </div>
+
+        <button id="btn-play" class="cyber-button">▶ INICIAR SISTEMA</button>
+      </div>
+    </div>
+
+    <div id="pause-menu" class="overlay-menu" style="display: none;">
+      <div class="menu-card">
+        <h1 class="glitch-text" data-text="SISTEMA EN PAUSA">SISTEMA EN PAUSA</h1>
+        <p class="menu-subtitle">// Sesión retenida en memoria</p>
+
+        <div class="controls-guide mini">
+          <div class="guide-row"><span class="key-badge">W A S D</span> <span>Moverse</span></div>
+          <div class="guide-row"><span class="key-badge">F</span> <span>Linterna UV</span></div>
+          <div class="guide-row"><span class="key-badge">ESC</span> <span>Reanudar</span></div>
+        </div>
+
+        <button id="btn-resume" class="cyber-button">▶ REANUDAR CONEXIÓN</button>
+        <button id="btn-quit-pause" class="cyber-button danger">✖ CERRAR SESIÓN</button>
+      </div>
+    </div>
+
+    <div id="gameover-menu" class="overlay-menu" style="display: none;">
+      <div class="menu-card critical">
+        <h1 class="critical-text">SISTEMA CAÍDO</h1>
+        <p class="critical-subtitle">Batería agotada // Núcleo colapsado</p>
+        <button id="btn-restart" class="cyber-button danger">↺ REINICIAR SISTEMA</button>
       </div>
     </div>
 

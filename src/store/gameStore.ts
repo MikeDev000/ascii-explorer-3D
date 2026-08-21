@@ -47,8 +47,8 @@ export const useGameStore = createStore<GameState>((set) => ({
   setBattery: (battery: number) => set({ battery }),
 
   inventory: [],
-  addCollectible: (item: Collectible) => set((state) => ({ 
-    inventory: [...state.inventory, item] 
+  addCollectible: (item: Collectible) => set((state) => ({
+    inventory: [...state.inventory, item]
   })),
   removeCollectibles: (ids: string[]) => set((state) => ({
     inventory: state.inventory.filter((item) => !ids.includes(item.id))

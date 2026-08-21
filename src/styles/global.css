@@ -264,3 +264,189 @@ html, body {
   animation: screenGlitchAnim 0.2s infinite;
   pointer-events: none;
 }
+
+/* UI Menus (Fase 5) */
+.overlay-menu {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.35); /* Fondo semitransparente para ver el fondo ASCII nítido */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.menu-card {
+  background: rgba(10, 15, 25, 0.96);
+  border: 1px solid #00f0ff;
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.25), inset 0 0 15px rgba(0, 240, 255, 0.1);
+  padding: 30px 45px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+}
+
+.menu-card.critical {
+  border-color: #ff003c;
+  box-shadow: 0 0 30px rgba(255, 0, 60, 0.35), inset 0 0 15px rgba(255, 0, 60, 0.15);
+}
+
+.ascii-logo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 11px;
+  color: #00f0ff;
+  text-shadow: 0 0 8px #00f0ff;
+  white-space: pre;
+  margin-bottom: 5px;
+}
+
+.menu-card h1 {
+  font-size: 2.2rem;
+  color: #00f0ff;
+  text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+  margin: 10px 0 5px 0;
+  letter-spacing: 4px;
+}
+
+.menu-card h1.critical-text {
+  color: #ff003c;
+  text-shadow: 0 0 10px #ff003c, 0 0 20px #ff003c;
+}
+
+.sys-status {
+  font-size: 11px;
+  color: #00ffaa;
+  letter-spacing: 2px;
+  margin-bottom: 25px;
+  text-shadow: 0 0 6px #00ffaa;
+}
+
+.menu-subtitle {
+  font-size: 13px;
+  color: #8899aa;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.critical-subtitle {
+  font-size: 14px;
+  color: #ff6688;
+  margin-bottom: 25px;
+  letter-spacing: 1px;
+}
+
+.controls-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 25px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 12px 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.controls-guide.mini {
+  margin-bottom: 20px;
+}
+
+.guide-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #ddd;
+}
+
+.key-badge {
+  background: rgba(0, 240, 255, 0.15);
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 3px;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+}
+
+.cyber-button {
+  background: rgba(0, 240, 255, 0.08);
+  color: #00f0ff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: 2px solid #00f0ff;
+  padding: 12px 28px;
+  margin: 8px 0;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+  letter-spacing: 2px;
+  border-radius: 4px;
+}
+
+.cyber-button:hover {
+  background: #00f0ff;
+  color: #000;
+  box-shadow: 0 0 24px #00f0ff;
+  transform: translateY(-1px);
+}
+
+.cyber-button.danger {
+  border-color: #ff003c;
+  color: #ff003c;
+  background: rgba(255, 0, 60, 0.08);
+  box-shadow: 0 0 12px rgba(255, 0, 60, 0.25);
+}
+
+.cyber-button.danger:hover {
+  background: #ff003c;
+  color: #fff;
+  box-shadow: 0 0 24px #ff003c;
+}
+
+.glitch-text {
+  position: relative;
+}
+
+.glitch-text::before, .glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0.8;
+}
+.glitch-text::before {
+  left: 2px; text-shadow: -2px 0 #ff00ff;
+  animation: glitch-anim-1 2s infinite linear alternate-reverse;
+}
+.glitch-text::after {
+  left: -2px; text-shadow: -2px 0 #00ffff;
+  animation: glitch-anim-2 3s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim-1 {
+  0% { clip: rect(20px, 9999px, 85px, 0); }
+  20% { clip: rect(92px, 9999px, 11px, 0); }
+  40% { clip: rect(4px, 9999px, 59px, 0); }
+  60% { clip: rect(65px, 9999px, 34px, 0); }
+  80% { clip: rect(27px, 9999px, 90px, 0); }
+  100% { clip: rect(100px, 9999px, 45px, 0); }
+}
+
+@keyframes glitch-anim-2 {
+  0% { clip: rect(15px, 9999px, 70px, 0); }
+  20% { clip: rect(50px, 9999px, 99px, 0); }
+  40% { clip: rect(90px, 9999px, 20px, 0); }
+  60% { clip: rect(12px, 9999px, 45px, 0); }
+  80% { clip: rect(40px, 9999px, 50px, 0); }
+  100% { clip: rect(80px, 9999px, 15px, 0); }
+}

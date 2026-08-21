@@ -31,7 +31,7 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
   fakeRenderer.render = () => { };
 
   const effect = new AsciiEffect(fakeRenderer as THREE.WebGLRenderer, asciiChars, {
-    resolution: 0.15,
+    resolution: 0.13,
     invert: true,
     color: false,
     alpha: false,

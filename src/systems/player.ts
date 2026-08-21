@@ -14,8 +14,6 @@ export class PlayerController {
   private sprintMultiplier = 1.5;
   private jumpImpulse = 7;
   private isGrounded = false;
-  private lastUnlockTime = 0;
-  private readonly cooldownMs = 150;
 
   constructor(
     camera: THREE.Camera,
@@ -26,40 +24,6 @@ export class PlayerController {
     this.controls = new PointerLockControls(camera, domElement);
     this.input = input;
     this.world = world ?? null;
-
-    const instructions = document.getElementById('instructions');
-    const hud = document.getElementById('hud');
-
-    instructions?.addEventListener('click', () => {
-      const elapsed = performance.now() - this.lastUnlockTime;
-      const remaining = Math.max(0, this.cooldownMs - elapsed);
-
-      setTimeout(() => {
-        if (!this.controls.isLocked) {
-          try {
-            const p = (this.controls as any).lock();
-            if (p && typeof p.catch === 'function') {
-              p.catch(() => { });
-            }
-          } catch (_) { }
-        }
-      }, remaining);
-    });
-
-    this.controls.addEventListener('lock', () => {
-      if (instructions) instructions.style.display = 'none';
-      if (hud) hud.style.display = 'block';
-    });
-
-    this.controls.addEventListener('unlock', () => {
-      this.lastUnlockTime = performance.now();
-      const isTerminalOpen = useGameStore.getState().isTerminalOpen;
-
-      if (!isTerminalOpen) {
-        if (instructions) instructions.style.display = 'flex';
-        if (hud) hud.style.display = 'none';
-      }
-    });
 
     // Create Rapier physics body for player capsule
     if (this.world) {
@@ -75,6 +39,7 @@ export class PlayerController {
         .setRestitution(0.0);
 
       this.world.createCollider(colliderDesc, this.rigidBody);
+      this.rigidBody.wakeUp(); // Asegurar que el cuerpo esté activo de inmediato al inicializar el juego
     }
   }
 
@@ -82,14 +47,49 @@ export class PlayerController {
     return this.controls.object.position;
   }
 
+  public lock() {
+    try {
+      const p = (this.controls as any).lock();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => { });
+      }
+    } catch (_) { }
+  }
+
+  public unlock() {
+    try {
+      this.controls.unlock();
+    } catch (_) { }
+  }
+
+  public isLocked(): boolean {
+    return this.controls.isLocked;
+  }
+
+  public onLock(cb: () => void) {
+    this.controls.addEventListener('lock', cb);
+  }
+
+  public onUnlock(cb: () => void) {
+    this.controls.addEventListener('unlock', cb);
+  }
+
+  public dispose() {
+    this.controls.disconnect(); // Disconnects pointer lock events
+    this.controls.dispose();
+    if (this.rigidBody && this.world) {
+      this.world.removeRigidBody(this.rigidBody);
+    }
+  }
+
   public getPhysicsTranslation(): { x: number, y: number, z: number } {
     if (this.rigidBody) {
       return this.rigidBody.translation();
     }
-    return { 
-      x: this.controls.object.position.x, 
-      y: this.controls.object.position.y, 
-      z: this.controls.object.position.z 
+    return {
+      x: this.controls.object.position.x,
+      y: this.controls.object.position.y,
+      z: this.controls.object.position.z
     };
   }
 
