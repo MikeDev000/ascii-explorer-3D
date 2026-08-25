@@ -1,4 +1,5 @@
 import { useGameStore } from '../store/gameStore';
+import { LampSystem } from '../systems/lamp';
 
 export class CraftingService {
   public static craftBatteryCell(): { success: boolean; message: string; warning?: string } {
@@ -22,7 +23,7 @@ export class CraftingService {
 
       // Recharge standard: 100% battery, 0 penalty
       store.setBattery(100);
-      store.setLampTimeOn(0);
+      LampSystem.setTimeOn(0);
 
       if (isCorrupted) {
         store.setTriggerGlitch(true);
@@ -49,7 +50,7 @@ export class CraftingService {
 
       // Recharge unsafe: 40% battery, heavy penalty
       store.setBattery(40);
-      store.setLampTimeOn(10); // Penalty adds 10 seconds of "wear" immediately
+      LampSystem.setTimeOn(10); // Penalty adds 10 seconds of "wear" immediately
 
       return { 
         success: true, 

@@ -4,6 +4,7 @@ import { CraftingService } from '../services/CraftingService';
 
 export class TerminalSystem {
   private container: HTMLElement;
+  private scrollBody: HTMLElement;
   private output: HTMLElement;
   private inputField: HTMLInputElement;
   private isOpen: boolean = false;
@@ -12,6 +13,7 @@ export class TerminalSystem {
 
   constructor(inputManager: InputManager) {
     this.container = document.getElementById('terminal')!;
+    this.scrollBody = document.getElementById('terminal-body') || this.container;
     this.output = document.getElementById('terminal-output')!;
     this.inputField = document.getElementById('terminal-input') as HTMLInputElement;
 
@@ -122,7 +124,7 @@ export class TerminalSystem {
     const line = document.createElement('div');
     line.textContent = isCommand ? `> ${text}` : `\t${text}`;
     this.output.appendChild(line);
-    this.container.scrollTop = this.container.scrollHeight;
+    this.scrollBody.scrollTop = this.scrollBody.scrollHeight;
   }
 
   private executeCommand(cmd: string) {
@@ -166,7 +168,7 @@ export class TerminalSystem {
       return;
     }
 
-    if (['make bat0 --unsafebuild', 'build cell -u'].includes(fullCmd)) {
+    if (['make bat0 --unsafebuild', 'build cell -u', 'cell -u'].includes(fullCmd)) {
       const result = CraftingService.craftUnsafeBattery();
       this.print(result.message);
       if (result.warning) {

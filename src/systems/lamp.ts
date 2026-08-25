@@ -7,6 +7,7 @@ export const SharedUniforms = {
 };
 
 export class LampSystem {
+  public static instance: LampSystem | null = null;
   private spotLight: THREE.SpotLight;
   private isOn: boolean = false;
   private _timeOn = 0;
@@ -15,6 +16,7 @@ export class LampSystem {
   private readonly drainK = 100 / (17 * 17);
 
   constructor(camera: THREE.Camera, input: InputManager) {
+    LampSystem.instance = this;
     // Green terminal color as requested
     this.spotLight = new THREE.SpotLight(0x00ff00, 10.0, 5.0, Math.PI / 5, 0.4, 1);
     this.spotLight.visible = this.isOn;
@@ -47,7 +49,20 @@ export class LampSystem {
     SharedUniforms.uLampOn.value = this.isOn ? 1.0 : 0.0;
   }
 
+  public setTimeOn(time: number) {
+    this._timeOn = time;
+  }
+
+  public static setTimeOn(time: number) {
+    if (LampSystem.instance) {
+      LampSystem.instance.setTimeOn(time);
+    }
+  }
+
   public dispose(camera: THREE.Camera) {
+    if (LampSystem.instance === this) {
+      LampSystem.instance = null;
+    }
     camera.remove(this.spotLight);
     camera.remove(this.spotLight.target);
     this.spotLight.dispose();

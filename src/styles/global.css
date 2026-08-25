@@ -88,20 +88,17 @@ html, body {
   left: 50px;
   width: min(850px, 85vw);
   z-index: 20;
-  padding: 20px;
   box-sizing: border-box;
   font-family: 'JetBrains Mono', monospace;
   color: #fff;
   font-weight: bold;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden; /* Mantener la imagen fija y evitar que el contenedor base se desplace */
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  /* Scrollbar styling for a cleaner look */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 #terminal::before {
@@ -111,13 +108,30 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100%;
+  height: 100%;
   background-image: url('/images/terminal-ascii-100opacity.png');
   background-size: cover;
   background-position: center;
   opacity: 0.4;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   border-radius: 16px;
+}
+
+#terminal-body {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  /* Scrollbar styling for a cleaner look */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
 }
 
 #terminal-output {
