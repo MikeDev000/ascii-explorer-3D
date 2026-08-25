@@ -47,6 +47,10 @@ export class GameManager {
   private uiPause = document.getElementById('pause-menu')!;
   private uiGameOver = document.getElementById('gameover-menu')!;
   private uiHud = document.getElementById('hud')!;
+  private uiBatteryUi = document.getElementById('battery-ui');
+  private uiBatteryBar = document.getElementById('battery-bar');
+  private uiBatteryText = document.getElementById('battery-text');
+  private uiApp = document.getElementById('app');
 
   constructor(physicsWorld: RAPIER.World) {
     this.physicsWorld = physicsWorld;
@@ -257,10 +261,10 @@ export class GameManager {
   private updateHUD() {
     const storeState = useGameStore.getState();
     const batteryLevel = storeState.battery;
-    const batteryUi = document.getElementById('battery-ui');
-    const batteryBar = document.getElementById('battery-bar');
-    const batteryText = document.getElementById('battery-text');
-    const appContainer = document.getElementById('app');
+    const batteryUi = this.uiBatteryUi;
+    const batteryBar = this.uiBatteryBar;
+    const batteryText = this.uiBatteryText;
+    const appContainer = this.uiApp;
 
     if (batteryBar && batteryText && batteryUi) {
       batteryBar.style.width = `${batteryLevel}%`;

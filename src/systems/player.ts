@@ -15,6 +15,11 @@ export class PlayerController {
   private jumpImpulse = 7;
   private isGrounded = false;
 
+  private _frontDir = new THREE.Vector3();
+  private _rightDir = new THREE.Vector3();
+  private _moveDir = new THREE.Vector3();
+  private _ray = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
+
   constructor(
     camera: THREE.Camera,
     domElement: HTMLElement,
@@ -103,13 +108,15 @@ export class PlayerController {
       // Check ground using a downward Raycast originating just below the capsule feet (center - 0.92m)
       const playerPos = this.rigidBody.translation();
       const rayOriginY = playerPos.y - 0.92;
-      const ray = new RAPIER.Ray(
-        { x: playerPos.x, y: rayOriginY, z: playerPos.z },
-        { x: 0, y: -1, z: 0 }
-      );
+      this._ray.origin.x = playerPos.x;
+      this._ray.origin.y = rayOriginY;
+      this._ray.origin.z = playerPos.z;
+      this._ray.dir.x = 0;
+      this._ray.dir.y = -1;
+      this._ray.dir.z = 0;
 
       // Cast 0.15m downwards from feet
-      const hit = this.world.castRay(ray, 0.15, true);
+      const hit = this.world.castRay(this._ray, 0.15, true);
 
       // Player is grounded if ray hits a surface right below feet AND is not actively jumping upwards
       this.isGrounded = hit !== null && linvel.y <= 0.1;
@@ -125,27 +132,27 @@ export class PlayerController {
         const currentSpeed = isSprinting ? this.baseSpeed * this.sprintMultiplier : this.baseSpeed;
 
         // Calculate camera orientation direction vectors
-        const frontDir = new THREE.Vector3();
-        this.controls.getDirection(frontDir);
-        frontDir.y = 0; // Flatten movement to XZ plane
-        frontDir.normalize();
+        this._frontDir.set(0, 0, 0);
+        this.controls.getDirection(this._frontDir);
+        this._frontDir.y = 0; // Flatten movement to XZ plane
+        this._frontDir.normalize();
 
         // Vector pointing right relative to camera view
-        const rightDir = new THREE.Vector3(-frontDir.z, 0, frontDir.x);
+        this._rightDir.set(-this._frontDir.z, 0, this._frontDir.x);
 
-        const moveDir = new THREE.Vector3();
-        if (moveForward) moveDir.add(frontDir);
-        if (moveBackward) moveDir.sub(frontDir);
-        if (moveRight) moveDir.add(rightDir);
-        if (moveLeft) moveDir.sub(rightDir);
+        this._moveDir.set(0, 0, 0);
+        if (moveForward) this._moveDir.add(this._frontDir);
+        if (moveBackward) this._moveDir.sub(this._frontDir);
+        if (moveRight) this._moveDir.add(this._rightDir);
+        if (moveLeft) this._moveDir.sub(this._rightDir);
 
-        if (moveDir.lengthSq() > 0) {
-          moveDir.normalize();
+        if (this._moveDir.lengthSq() > 0) {
+          this._moveDir.normalize();
         }
 
         // Apply horizontal physics velocity
-        const targetVx = moveDir.x * currentSpeed;
-        const targetVz = moveDir.z * currentSpeed;
+        const targetVx = this._moveDir.x * currentSpeed;
+        const targetVz = this._moveDir.z * currentSpeed;
 
         let targetVy = linvel.y;
 

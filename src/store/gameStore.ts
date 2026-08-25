@@ -28,9 +28,6 @@ interface GameState {
 
   triggerGlitch: boolean;
   setTriggerGlitch: (trigger: boolean) => void;
-
-  lampTimeOn: number;
-  setLampTimeOn: (time: number) => void;
 }
 
 export const useGameStore = createStore<GameState>((set) => ({
@@ -68,8 +65,5 @@ export const useGameStore = createStore<GameState>((set) => ({
   },
 
   triggerGlitch: false,
-  setTriggerGlitch: (trigger: boolean) => set({ triggerGlitch: trigger }),
-
-  lampTimeOn: 0,
-  setLampTimeOn: (time: number) => set({ lampTimeOn: time })
+  setTriggerGlitch: (trigger: boolean) => set({ triggerGlitch: trigger })
 }));

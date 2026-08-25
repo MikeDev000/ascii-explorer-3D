@@ -8,7 +8,6 @@ export class CollectiblesSystem {
     group: THREE.Group;
     coreMesh: THREE.Mesh;
     wireMesh: THREE.Mesh;
-    light: THREE.PointLight;
   }[] = [];
 
   private scene: THREE.Scene;
@@ -47,6 +46,7 @@ export class CollectiblesSystem {
     this.onResize = () => {
       this.canvas.width = window.innerWidth;
       this.canvas.height = window.innerHeight;
+      this.ctx.font = 'bold 13px "JetBrains Mono", monospace';
     };
     window.addEventListener('resize', this.onResize);
     this.onResize(); // Initial sizing
@@ -101,7 +101,7 @@ export class CollectiblesSystem {
     const coreMat = new THREE.MeshPhongMaterial({
       color: mainColor,
       emissive: secondaryColor,
-      emissiveIntensity: 0.6,
+      emissiveIntensity: 1.2,
       shininess: 100
     });
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
@@ -119,11 +119,6 @@ export class CollectiblesSystem {
     const wireMesh = new THREE.Mesh(wireGeo, wireMat);
     group.add(wireMesh);
 
-    // Point Light (casts a vibrant neon glow onto the ground and surrounding walls)
-    const light = new THREE.PointLight(mainColor, 2.5, 5.0);
-    light.position.set(0, 0, 0);
-    group.add(light);
-
     this.scene.add(group);
 
     this.activeItems.push({
@@ -131,8 +126,7 @@ export class CollectiblesSystem {
       position,
       group,
       coreMesh,
-      wireMesh,
-      light
+      wireMesh
     });
   }
 
@@ -160,9 +154,6 @@ export class CollectiblesSystem {
       item.wireMesh.geometry.dispose();
       (item.wireMesh.material as THREE.Material).dispose();
     }
-    if (item.light && typeof item.light.dispose === 'function') {
-      item.light.dispose();
-    }
   }
 
   public update(delta: number = 0.016) {
@@ -172,7 +163,6 @@ export class CollectiblesSystem {
     this._playerVec.set(pPos.x, pPos.y, pPos.z);
 
     // Update camera matrices for accurate projection
-    this.camera.updateMatrixWorld();
     this._projScreenMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
     this._frustum.setFromProjectionMatrix(this._projScreenMatrix);
 
@@ -205,20 +195,16 @@ export class CollectiblesSystem {
       const floatOffsetY = Math.sin(now + i) * 0.12;
       item.group.position.y = item.position.y + floatOffsetY;
 
-      // Light pulsing effect
-      item.light.intensity = 2.0 + Math.sin(now * 2 + i) * 0.8;
-
       // Check if item is in camera view
       if (this._frustum.containsPoint(item.group.position)) {
         // 3D to 2D Screen Projection
         this._tempV.copy(item.group.position);
         this._tempV.project(this.camera);
 
-        const x = (this._tempV.x * 0.5 + 0.5) * window.innerWidth;
-        const y = (-(this._tempV.y * 0.5) + 0.5) * window.innerHeight;
+        const x = (this._tempV.x * 0.5 + 0.5) * this.canvas.width;
+        const y = (-(this._tempV.y * 0.5) + 0.5) * this.canvas.height;
         
         // Draw the badge on canvas
-        this.ctx.font = 'bold 13px "JetBrains Mono", monospace';
         const text = `◆  ${item.data.ascii}  ${item.data.name}`;
         const metrics = this.ctx.measureText(text);
         const width = metrics.width + 16;

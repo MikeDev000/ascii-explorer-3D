@@ -29,12 +29,4 @@ export function setupLighting(scene: THREE.Scene) {
   const pointLight1 = new THREE.PointLight(0xffffff, 1.5, 10);
   pointLight1.position.set(10, 5, 10);
   scene.add(pointLight1);
-
-  const pointLight2 = new THREE.PointLight(0xffffff, 1.5, 10);
-  pointLight2.position.set(-10, 5, -10);
-  scene.add(pointLight2);
-
-  const pointLight3 = new THREE.PointLight(0xffffff, 1.0, 15);
-  pointLight3.position.set(0, 8, 15);
-  scene.add(pointLight3);
 }

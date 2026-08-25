@@ -31,7 +31,7 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
   fakeRenderer.render = () => { };
 
   const effect = new AsciiEffect(fakeRenderer as THREE.WebGLRenderer, asciiChars, {
-    resolution: 0.13,
+    resolution: 0.10,
     invert: true,
     color: false,
     alpha: false,
@@ -78,6 +78,7 @@ export function createRenderer(scene: THREE.Scene, camera: THREE.Camera) {
 
   // Nueva función limpia de renderizado que no monkey-patchea el renderer global
   const render = (s: THREE.Scene, c: THREE.Camera) => {
+    renderer.info.reset(); // Reset internal stats to avoid memory leak
     composer.render();
     effect.render(s, c);
   };

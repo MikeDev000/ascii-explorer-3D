@@ -122,7 +122,7 @@ class EntityFactory {
   }
 
   public createDynamicSphere(x: number, y: number, z: number, radius: number) {
-    const geo = new THREE.SphereGeometry(radius, 16, 16);
+    const geo = new THREE.SphereGeometry(radius, 8, 6);
     const mesh = new THREE.Mesh(geo, this.sphereMat);
     mesh.position.set(x, y, z);
     mesh.receiveShadow = true;

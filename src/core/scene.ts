@@ -5,13 +5,13 @@ export function createScene() {
   scene.background = new THREE.Color(0x000000);
 
   // Fog to limit visibility gently at far distance
-  scene.fog = new THREE.FogExp2(0x000000, 0.001);
+  scene.fog = new THREE.FogExp2(0x000000, 0.04);
 
   return scene;
 }
 
 export function createCamera() {
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 60);
   camera.position.set(0, 1.85, 0); // 1.85m, altura del personaje
   camera.layers.enable(1); // Habilitar visión para objetos ocultos
   return camera;
