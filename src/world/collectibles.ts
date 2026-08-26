@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d';
 import { useGameStore, type Collectible } from '../store/gameStore';
+import type { PlayerController } from '../systems/player';
 
 export class CollectiblesSystem {
   private activeItems: {
@@ -8,12 +10,14 @@ export class CollectiblesSystem {
     group: THREE.Group;
     coreMesh: THREE.Mesh;
     wireMesh: THREE.Mesh;
+    pointLight: THREE.PointLight;
   }[] = [];
 
   private scene: THREE.Scene;
   private container: HTMLElement;
   private camera: THREE.Camera;
-  private playerBody: { getPhysicsTranslation: () => { x: number, y: number, z: number } } | null = null;
+  private player: PlayerController | null = null;
+  private physicsWorld: RAPIER.World | null = null;
   
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -24,11 +28,20 @@ export class CollectiblesSystem {
   private _frustum = new THREE.Frustum();
   private _tempV = new THREE.Vector3();
   private _playerVec = new THREE.Vector3();
+  private _ray = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 });
+  private _rayDir = new THREE.Vector3();
+  private _camPos = new THREE.Vector3();
 
-  constructor(scene: THREE.Scene, camera: THREE.Camera, playerBody: { getPhysicsTranslation: () => { x: number, y: number, z: number } }) {
+  constructor(
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+    player: PlayerController,
+    physicsWorld?: RAPIER.World
+  ) {
     this.scene = scene;
     this.camera = camera;
-    this.playerBody = playerBody;
+    this.player = player;
+    this.physicsWorld = physicsWorld ?? null;
     this.container = document.getElementById('collectibles-container')!;
 
     // Setup Canvas Overlay
@@ -119,6 +132,11 @@ export class CollectiblesSystem {
     const wireMesh = new THREE.Mesh(wireGeo, wireMat);
     group.add(wireMesh);
 
+    // Optimized PointLight to restore ground luminance efficiently (short range, no shadows)
+    const pointLight = new THREE.PointLight(mainColor, 2.0, 4.5, 2);
+    pointLight.castShadow = false;
+    group.add(pointLight);
+
     this.scene.add(group);
 
     this.activeItems.push({
@@ -126,7 +144,8 @@ export class CollectiblesSystem {
       position,
       group,
       coreMesh,
-      wireMesh
+      wireMesh,
+      pointLight
     });
   }
 
@@ -154,12 +173,15 @@ export class CollectiblesSystem {
       item.wireMesh.geometry.dispose();
       (item.wireMesh.material as THREE.Material).dispose();
     }
+    if (item.pointLight) {
+      item.pointLight.dispose();
+    }
   }
 
   public update(delta: number = 0.016) {
-    if (!this.playerBody) return;
+    if (!this.player) return;
 
-    const pPos = this.playerBody.getPhysicsTranslation();
+    const pPos = this.player.getPhysicsTranslation();
     this._playerVec.set(pPos.x, pPos.y, pPos.z);
 
     // Update camera matrices for accurate projection
@@ -197,45 +219,87 @@ export class CollectiblesSystem {
 
       // Check if item is in camera view
       if (this._frustum.containsPoint(item.group.position)) {
-        // 3D to 2D Screen Projection
-        this._tempV.copy(item.group.position);
-        this._tempV.project(this.camera);
+        let isOccluded = false;
 
-        const x = (this._tempV.x * 0.5 + 0.5) * this.canvas.width;
-        const y = (-(this._tempV.y * 0.5) + 0.5) * this.canvas.height;
-        
-        // Draw the badge on canvas
-        const text = `◆  ${item.data.ascii}  ${item.data.name}`;
-        const metrics = this.ctx.measureText(text);
-        const width = metrics.width + 16;
-        const height = 24;
-        
-        const boxX = x - width / 2;
-        const boxY = y - 100 - height / 2; // Float above the object
-        
-        // Handle colors for corruption blinking
-        let mainColor = '#00ffff';
-        let strokeColor = '#ff00ff';
-        let boxColor = 'rgba(12, 5, 24, 0.85)';
-        
-        if (item.data.corrupted) {
-          if (Math.sin(performance.now() * 0.02) > 0) {
-            mainColor = '#ff003c';
-            strokeColor = '#ff003c';
-            boxColor = 'rgba(30, 0, 10, 0.9)';
+        // Perform Line-of-Sight occlusion test using Rapier3D physics world
+        if (this.physicsWorld) {
+          this.camera.getWorldPosition(this._camPos);
+          this._rayDir.subVectors(item.group.position, this._camPos);
+          const totalDist = this._rayDir.length();
+
+          if (totalDist > 0.6) {
+            this._rayDir.normalize();
+
+            // Offset ray start slightly in front of camera to clear player capsule
+            const startOffset = 0.55;
+            this._ray.origin.x = this._camPos.x + this._rayDir.x * startOffset;
+            this._ray.origin.y = this._camPos.y + this._rayDir.y * startOffset;
+            this._ray.origin.z = this._camPos.z + this._rayDir.z * startOffset;
+            this._ray.dir.x = this._rayDir.x;
+            this._ray.dir.y = this._rayDir.y;
+            this._ray.dir.z = this._rayDir.z;
+
+            const maxDist = totalDist - startOffset - 0.2;
+            if (maxDist > 0) {
+              const playerBody = this.player?.getRigidBody() ?? undefined;
+              const hit = this.physicsWorld.castRay(
+                this._ray,
+                maxDist,
+                true,
+                undefined,
+                undefined,
+                undefined,
+                playerBody
+              );
+              if (hit !== null) {
+                isOccluded = true; // Obstacle (wall, cube, etc.) is in front!
+              }
+            }
           }
         }
-        
-        this.ctx.fillStyle = boxColor;
-        this.ctx.fillRect(boxX, boxY, width, height);
-        this.ctx.strokeStyle = strokeColor;
-        this.ctx.lineWidth = 1.5;
-        this.ctx.strokeRect(boxX, boxY, width, height);
-        
-        this.ctx.fillStyle = mainColor;
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(text, x, boxY + height / 2 + 1); // +1 for visual baseline adjustment
+
+        // Only draw badge if clear line of sight
+        if (!isOccluded) {
+          // 3D to 2D Screen Projection
+          this._tempV.copy(item.group.position);
+          this._tempV.project(this.camera);
+
+          const x = (this._tempV.x * 0.5 + 0.5) * this.canvas.width;
+          const y = (-(this._tempV.y * 0.5) + 0.5) * this.canvas.height;
+          
+          // Draw the badge on canvas
+          const text = `◆  ${item.data.ascii}  ${item.data.name}`;
+          const metrics = this.ctx.measureText(text);
+          const width = metrics.width + 16;
+          const height = 24;
+          
+          const boxX = x - width / 2;
+          const boxY = y - 100 - height / 2; // Float above the object
+          
+          // Handle colors for corruption blinking
+          let mainColor = '#00ffff';
+          let strokeColor = '#ff00ff';
+          let boxColor = 'rgba(12, 5, 24, 0.85)';
+          
+          if (item.data.corrupted) {
+            if (Math.sin(performance.now() * 0.02) > 0) {
+              mainColor = '#ff003c';
+              strokeColor = '#ff003c';
+              boxColor = 'rgba(30, 0, 10, 0.9)';
+            }
+          }
+          
+          this.ctx.fillStyle = boxColor;
+          this.ctx.fillRect(boxX, boxY, width, height);
+          this.ctx.strokeStyle = strokeColor;
+          this.ctx.lineWidth = 1.5;
+          this.ctx.strokeRect(boxX, boxY, width, height);
+          
+          this.ctx.fillStyle = mainColor;
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText(text, x, boxY + height / 2 + 1); // +1 for visual baseline adjustment
+        }
       }
     }
   }

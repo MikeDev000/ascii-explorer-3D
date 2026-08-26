@@ -145,7 +145,7 @@ export class GameManager {
     this.player = new PlayerController(this.camera, document.body, this.input, this.physicsWorld);
     this.lamp = new LampSystem(this.camera, this.input);
     this.terminal = new TerminalSystem(this.input);
-    this.collectibles = new CollectiblesSystem(this.scene, this.camera, this.player);
+    this.collectibles = new CollectiblesSystem(this.scene, this.camera, this.player, this.physicsWorld);
 
     // Detect unlock when in-game (e.g. user pressed ESC or window lost focus)
     this.player.onUnlock(() => {

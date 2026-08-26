@@ -87,6 +87,10 @@ export class PlayerController {
     }
   }
 
+  public getRigidBody(): RAPIER.RigidBody | null {
+    return this.rigidBody;
+  }
+
   public getPhysicsTranslation(): { x: number, y: number, z: number } {
     if (this.rigidBody) {
       return this.rigidBody.translation();
