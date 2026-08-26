@@ -18,7 +18,7 @@ export class CollectiblesSystem {
   private camera: THREE.Camera;
   private player: PlayerController | null = null;
   private physicsWorld: RAPIER.World | null = null;
-  
+
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private onResize: () => void;
@@ -155,7 +155,7 @@ export class CollectiblesSystem {
     if (this.canvas && this.canvas.parentElement) {
       this.canvas.parentElement.removeChild(this.canvas);
     }
-    
+
     // Dispose all active 3D items
     for (const item of this.activeItems) {
       this.scene.remove(item.group);
@@ -189,15 +189,16 @@ export class CollectiblesSystem {
     this._frustum.setFromProjectionMatrix(this._projScreenMatrix);
 
     const now = performance.now() * 0.003;
-    
+
     // Clear canvas every frame
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     for (let i = this.activeItems.length - 1; i >= 0; i--) {
       const item = this.activeItems[i];
+      const distToPlayer = this._playerVec.distanceTo(item.group.position);
 
-      // Distance check for collection (1.2 units for responsive pickup)
-      if (this._playerVec.distanceTo(item.group.position) < 1.2) {
+      // Distance check for collection (1.1 units for responsive pickup)
+      if (distToPlayer < 1.1) {
         // Collect it
         useGameStore.getState().addCollectible(item.data);
         this.scene.remove(item.group);
@@ -217,8 +218,8 @@ export class CollectiblesSystem {
       const floatOffsetY = Math.sin(now + i) * 0.12;
       item.group.position.y = item.position.y + floatOffsetY;
 
-      // Check if item is in camera view
-      if (this._frustum.containsPoint(item.group.position)) {
+      // Check if item is in camera view and within ~2m proximity
+      if (distToPlayer <= 3.5 && this._frustum.containsPoint(item.group.position)) {
         let isOccluded = false;
 
         // Perform Line-of-Sight occlusion test using Rapier3D physics world
@@ -266,39 +267,39 @@ export class CollectiblesSystem {
 
           const x = (this._tempV.x * 0.5 + 0.5) * this.canvas.width;
           const y = (-(this._tempV.y * 0.5) + 0.5) * this.canvas.height;
-          
-          // Draw the badge on canvas
-          const text = `◆  ${item.data.ascii}  ${item.data.name}`;
+
+          // Draw the compact badge on canvas
+          const text = `${item.data.ascii} ${item.data.name}`;
           const metrics = this.ctx.measureText(text);
-          const width = metrics.width + 16;
+          const width = Math.ceil(metrics.width) + 10;
           const height = 24;
-          
-          const boxX = x - width / 2;
-          const boxY = y - 100 - height / 2; // Float above the object
-          
+
+          const boxX = Math.round(x - width / 2);
+          const boxY = Math.round(y - 80 - height / 2); // Floating neatly just above the object
+
           // Handle colors for corruption blinking
           let mainColor = '#00ffff';
           let strokeColor = '#ff00ff';
-          let boxColor = 'rgba(12, 5, 24, 0.85)';
-          
+          let boxColor = 'rgba(12, 5, 24, 0.88)';
+
           if (item.data.corrupted) {
             if (Math.sin(performance.now() * 0.02) > 0) {
               mainColor = '#ff003c';
               strokeColor = '#ff003c';
-              boxColor = 'rgba(30, 0, 10, 0.9)';
+              boxColor = 'rgba(30, 0, 10, 0.92)';
             }
           }
-          
+
           this.ctx.fillStyle = boxColor;
           this.ctx.fillRect(boxX, boxY, width, height);
           this.ctx.strokeStyle = strokeColor;
-          this.ctx.lineWidth = 1.5;
+          this.ctx.lineWidth = 1;
           this.ctx.strokeRect(boxX, boxY, width, height);
-          
+
           this.ctx.fillStyle = mainColor;
           this.ctx.textAlign = 'center';
           this.ctx.textBaseline = 'middle';
-          this.ctx.fillText(text, x, boxY + height / 2 + 1); // +1 for visual baseline adjustment
+          this.ctx.fillText(text, x, boxY + height / 2);
         }
       }
     }
