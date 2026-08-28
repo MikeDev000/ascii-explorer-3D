@@ -193,12 +193,17 @@ export class CollectiblesSystem {
     // Clear canvas every frame
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Pre-calculated squared distances for zero-GC performance
+    const PICKUP_DIST_SQ = 1.21; // 1.1 * 1.1
+    const MAX_VISIBILITY_DIST_SQ = 6.25; // 2.5 * 2.5
+    const FULL_OPACITY_DIST_SQ = 4.0; // 2.0 * 2.0
+
     for (let i = this.activeItems.length - 1; i >= 0; i--) {
       const item = this.activeItems[i];
-      const distToPlayer = this._playerVec.distanceTo(item.group.position);
+      const distSqToPlayer = this._playerVec.distanceToSquared(item.group.position);
 
       // Distance check for collection (1.1 units for responsive pickup)
-      if (distToPlayer < 1.1) {
+      if (distSqToPlayer < PICKUP_DIST_SQ) {
         // Collect it
         useGameStore.getState().addCollectible(item.data);
         this.scene.remove(item.group);
@@ -218,8 +223,8 @@ export class CollectiblesSystem {
       const floatOffsetY = Math.sin(now + i) * 0.12;
       item.group.position.y = item.position.y + floatOffsetY;
 
-      // Check if item is in camera view and within ~2m proximity
-      if (distToPlayer <= 3.5 && this._frustum.containsPoint(item.group.position)) {
+      // Check if item is within visibility range and inside camera frustum
+      if (distSqToPlayer <= MAX_VISIBILITY_DIST_SQ && this._frustum.containsPoint(item.group.position)) {
         let isOccluded = false;
 
         // Perform Line-of-Sight occlusion test using Rapier3D physics world
@@ -261,45 +266,59 @@ export class CollectiblesSystem {
 
         // Only draw badge if clear line of sight
         if (!isOccluded) {
-          // 3D to 2D Screen Projection
-          this._tempV.copy(item.group.position);
-          this._tempV.project(this.camera);
+          // Calculate smooth proximity alpha (0.0 at max distance -> 1.0 at full opacity distance)
+          const alpha = Math.max(
+            0,
+            Math.min(1, (MAX_VISIBILITY_DIST_SQ - distSqToPlayer) / (MAX_VISIBILITY_DIST_SQ - FULL_OPACITY_DIST_SQ))
+          );
 
-          const x = (this._tempV.x * 0.5 + 0.5) * this.canvas.width;
-          const y = (-(this._tempV.y * 0.5) + 0.5) * this.canvas.height;
+          if (alpha > 0.01) {
+            // 3D to 2D Screen Projection
+            this._tempV.copy(item.group.position);
+            this._tempV.project(this.camera);
 
-          // Draw the compact badge on canvas
-          const text = `${item.data.ascii} ${item.data.name}`;
-          const metrics = this.ctx.measureText(text);
-          const width = Math.ceil(metrics.width) + 10;
-          const height = 24;
+            const x = (this._tempV.x * 0.5 + 0.5) * this.canvas.width;
+            const y = (-(this._tempV.y * 0.5) + 0.5) * this.canvas.height;
 
-          const boxX = Math.round(x - width / 2);
-          const boxY = Math.round(y - 80 - height / 2); // Floating neatly just above the object
+            // Draw the compact badge on canvas
+            const text = `${item.data.ascii} ${item.data.name}`;
+            const metrics = this.ctx.measureText(text);
+            const width = Math.ceil(metrics.width) + 10;
+            const height = 24;
 
-          // Handle colors for corruption blinking
-          let mainColor = '#00ffff';
-          let strokeColor = '#ff00ff';
-          let boxColor = 'rgba(12, 5, 24, 0.88)';
+            const boxX = Math.round(x - width / 2);
+            const boxY = Math.round(y - 80 - height / 2); // Floating neatly just above the object
 
-          if (item.data.corrupted) {
-            if (Math.sin(performance.now() * 0.02) > 0) {
-              mainColor = '#ff003c';
-              strokeColor = '#ff003c';
-              boxColor = 'rgba(30, 0, 10, 0.92)';
+            // Handle colors for corruption blinking
+            let mainColor = '#00ffff';
+            let strokeColor = '#ff00ff';
+            let boxColor = 'rgba(12, 5, 24, 0.88)';
+
+            if (item.data.corrupted) {
+              if (Math.sin(performance.now() * 0.02) > 0) {
+                mainColor = '#ff003c';
+                strokeColor = '#ff003c';
+                boxColor = 'rgba(30, 0, 10, 0.92)';
+              }
             }
+
+            // Apply smooth proximity fade
+            this.ctx.globalAlpha = alpha;
+
+            this.ctx.fillStyle = boxColor;
+            this.ctx.fillRect(boxX, boxY, width, height);
+            this.ctx.strokeStyle = strokeColor;
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(boxX, boxY, width, height);
+
+            this.ctx.fillStyle = mainColor;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(text, x, boxY + height / 2);
+
+            // Reset globalAlpha to default
+            this.ctx.globalAlpha = 1.0;
           }
-
-          this.ctx.fillStyle = boxColor;
-          this.ctx.fillRect(boxX, boxY, width, height);
-          this.ctx.strokeStyle = strokeColor;
-          this.ctx.lineWidth = 1;
-          this.ctx.strokeRect(boxX, boxY, width, height);
-
-          this.ctx.fillStyle = mainColor;
-          this.ctx.textAlign = 'center';
-          this.ctx.textBaseline = 'middle';
-          this.ctx.fillText(text, x, boxY + height / 2);
         }
       }
     }
