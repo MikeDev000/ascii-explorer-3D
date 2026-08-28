@@ -14,8 +14,9 @@ export class TerminalSystem {
   private boundOnKeyDown: (e: KeyboardEvent) => void;
 
   private readonly COMMANDS: string[] = [
-    'ls', 'ls /inventory/', 'sanitize -f', 
+    'ls', 'ls /inventory/', 'sanitize -f',
     'build cell', 'make bat0', 'compile buffer',
+    './powercell.bin', 'insmod powercell.bin', 'load cell',
     'cell -u', 'build cell -u', 'make bat0 --unsafebuild',
     'hello', 'help', 'resetbattery', 'clear', 'cls',
     'cat', 'set', 'chmod', 'free', 'kill'
@@ -67,11 +68,11 @@ export class TerminalSystem {
       if (e.key === 'Tab') {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const cmd = this.inputField.value;
         if (cmd) {
           const matches = this.COMMANDS.filter(c => c.startsWith(cmd.toLowerCase()));
-          
+
           if (matches.length === 1) {
             this.inputField.value = matches[0];
             this.lastTabInput = '';
@@ -84,7 +85,7 @@ export class TerminalSystem {
               }
               commonPrefix = commonPrefix.substring(0, j);
             }
-            
+
             if (commonPrefix.length > cmd.length) {
               this.inputField.value = commonPrefix;
               this.lastTabInput = '';
@@ -105,13 +106,13 @@ export class TerminalSystem {
       if (e.key === 'ArrowUp') {
         e.preventDefault();
         e.stopPropagation();
-        
+
         if (this.history.length === 0) return;
-        
+
         if (this.historyIndex === -1) {
           this.draftInput = this.inputField.value;
         }
-        
+
         if (this.historyIndex < this.history.length - 1) {
           this.historyIndex++;
           this.inputField.value = this.history[this.historyIndex];
@@ -122,7 +123,7 @@ export class TerminalSystem {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         e.stopPropagation();
-        
+
         if (this.historyIndex >= 0) {
           this.historyIndex--;
           if (this.historyIndex === -1) {
@@ -214,6 +215,26 @@ export class TerminalSystem {
     this.scrollBody.scrollTop = this.scrollBody.scrollHeight;
   }
 
+  private async printSequence(lines: string[], delayMs: number = 180, warning?: string, onComplete?: () => void) {
+    for (let i = 0; i < lines.length; i++) {
+      this.print(lines[i]);
+      if (i < lines.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+    if (onComplete) {
+      onComplete();
+    }
+    if (warning) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      const warnLines = warning.split('\n');
+      for (const w of warnLines) {
+        this.print(w);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
   private executeCommand(cmd: string) {
     this.print(cmd, true);
 
@@ -236,7 +257,11 @@ export class TerminalSystem {
         this.print('Inventory is empty.');
       } else {
         inv.forEach(item => {
-          this.print(`${item.ascii} ${item.name} ${item.corrupted ? '(CORRUPTED)' : ''}`);
+          if (item.type === 'powercell') {
+            this.print(`${item.ascii} ${item.name} [Type: BIN-64 / State: UNMOUNTED / Perms: -rwxr-xr-x] ${item.corrupted ? '(CORRUPTED)' : ''}`);
+          } else {
+            this.print(`${item.ascii} ${item.name} ${item.corrupted ? '(CORRUPTED)' : ''}`);
+          }
         });
       }
       return;
@@ -254,9 +279,21 @@ export class TerminalSystem {
 
     if (['build cell', 'make bat0', 'compile buffer'].includes(fullCmd)) {
       const result = CraftingService.craftBatteryCell();
-      this.print(result.message);
-      if (result.warning) {
-        this.print(result.warning);
+      this.printSequence(result.steps, 180, result.warning);
+      return;
+    }
+
+    if (['./powercell.bin', 'insmod powercell.bin', 'load cell', 'load powercell.bin', 'insmod ./powercell.bin', './powercell', 'insmod powercell', 'load powercell'].includes(fullCmd)) {
+      const result = CraftingService.installPowerCell();
+      if (result.success) {
+        this.printSequence(result.steps, 220, result.warning, () => {
+          CraftingService.animateBatteryRecharge(100, 1500);
+          if (result.isCorrupted) {
+            useGameStore.getState().setTriggerGlitch(true);
+          }
+        });
+      } else {
+        this.printSequence(result.steps, 150);
       }
       return;
     }
