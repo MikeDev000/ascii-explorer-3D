@@ -26,6 +26,7 @@ export class GameManager {
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
+  private renderer!: THREE.WebGLRenderer;
   private render!: (s: THREE.Scene, c: THREE.Camera) => void;
   private cleanupRenderer!: () => void;
   private physicsWorld: RAPIER.World;
@@ -51,6 +52,7 @@ export class GameManager {
   private uiBatteryBar = document.getElementById('battery-bar');
   private uiBatteryText = document.getElementById('battery-text');
   private uiApp = document.getElementById('app');
+  private uiLoadingBar = document.getElementById('loading-bar');
 
   constructor(physicsWorld: RAPIER.World) {
     this.physicsWorld = physicsWorld;
@@ -134,6 +136,7 @@ export class GameManager {
     this.scene.add(this.camera);
 
     const rendererSystem = createRenderer(this.scene, this.camera);
+    this.renderer = rendererSystem.renderer;
     this.render = rendererSystem.render;
     this.cleanupRenderer = rendererSystem.cleanup;
 
@@ -166,12 +169,62 @@ export class GameManager {
     this.setupWorld();
 
     this.transitionTo(GameState.PLAYING);
-    this.lastTime = performance.now();
 
     // Lock pointer immediately on button click
-    setTimeout(() => {
-      this.player.lock();
-    }, 50);
+    this.player.lock();
+
+    // Subtle loading bar animation & shader pre-compilation
+    if (this.uiLoadingBar) {
+      this.uiLoadingBar.style.opacity = '1';
+      this.uiLoadingBar.style.width = '30%';
+    }
+
+    requestAnimationFrame(() => {
+      if (this.uiLoadingBar) {
+        this.uiLoadingBar.style.width = '70%';
+      }
+
+      // Precompile all shader variants
+      this.precompileShaders();
+
+      if (this.uiLoadingBar) {
+        this.uiLoadingBar.style.width = '100%';
+      }
+
+      // Synchronize frame timer after compilation to prevent physics delta spikes
+      this.lastTime = performance.now();
+
+      setTimeout(() => {
+        if (this.uiLoadingBar) {
+          this.uiLoadingBar.style.opacity = '0';
+          setTimeout(() => {
+            if (this.uiLoadingBar) this.uiLoadingBar.style.width = '0%';
+          }, 200);
+        }
+      }, 80);
+    });
+  }
+
+  private precompileShaders() {
+    if (!this.renderer || !this.scene || !this.camera) return;
+
+    // Force lamp spotlight on to compile spotlight shader variants for all scene materials
+    if (this.lamp) {
+      this.lamp.setLightState(true);
+    }
+
+    // Compile materials in the scene
+    this.renderer.compile(this.scene, this.camera);
+
+    // Perform one full render pass to warm up EffectComposer passes (Fisheye, RenderPass, AsciiEffect)
+    if (typeof this.render === 'function') {
+      this.render(this.scene, this.camera);
+    }
+
+    // Restore lamp to its actual state (off by default)
+    if (this.lamp) {
+      this.lamp.setLightState(this.lamp.getIsOn());
+    }
   }
 
   public resumeGame() {

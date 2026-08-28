@@ -1,5 +1,5 @@
 export class WorldQueryService {
-  public static freeNearbyObstacles(playerPosition?: { x: number, y: number, z: number }): { success: boolean; message: string; warning?: string } {
+  public static freeNearbyObstacles(_playerPosition?: { x: number, y: number, z: number }): { success: boolean; message: string; warning?: string } {
     // Placeholder implementation
     return {
       success: true,

@@ -11,7 +11,7 @@ export class LampSystem {
   private spotLight: THREE.SpotLight;
   private isOn: boolean = false;
   private _timeOn = 0;
-  
+
   // k constant for quadratic drain: 100% drain in 17 seconds -> 100 / (17^2) ≈ 0.346
   private readonly drainK = 100 / (17 * 17);
 
@@ -59,6 +59,15 @@ export class LampSystem {
     }
   }
 
+  public setLightState(enabled: boolean) {
+    this.spotLight.visible = enabled;
+    SharedUniforms.uLampOn.value = enabled ? 1.0 : 0.0;
+  }
+
+  public getIsOn(): boolean {
+    return this.isOn;
+  }
+
   public dispose(camera: THREE.Camera) {
     if (LampSystem.instance === this) {
       LampSystem.instance = null;
@@ -71,18 +80,18 @@ export class LampSystem {
 
   public update(delta: number) {
     const store = useGameStore.getState();
-    
+
     if (this.isOn) {
       // Heat up (increase continuous usage time)
       this._timeOn += delta;
-      
+
       // Calculate instantaneous drain rate (derivative of k * t^2 -> 2 * k * t)
       const drainRate = 2 * this.drainK * this._timeOn;
-      
+
       // Drain battery
       const newBattery = Math.max(0, store.battery - drainRate * delta);
       store.setBattery(newBattery);
-      
+
       // Auto-turn off if empty
       if (newBattery <= 0) {
         this.toggle();
