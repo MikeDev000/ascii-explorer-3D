@@ -34,7 +34,7 @@ export class PlayerController {
     if (this.world) {
       // Player capsule body (half height 0.5m, radius 0.4m -> total height 1.8m)
       const rigidBodyDesc = RAPIER.RigidBodyDesc.dynamic()
-        .setTranslation(0, 15.0, 0)
+        .setTranslation(0, 0.95, 0)
         .lockRotations(); // Keep capsule upright
 
       this.rigidBody = this.world.createRigidBody(rigidBodyDesc);
@@ -45,6 +45,9 @@ export class PlayerController {
 
       this.world.createCollider(colliderDesc, this.rigidBody);
       this.rigidBody.wakeUp(); // Asegurar que el cuerpo esté activo de inmediato al inicializar el juego
+
+      // Posicionar la cámara inicialmente a la altura de los ojos en el suelo
+      camera.position.set(0, 2.0, 0);
     }
   }
 
