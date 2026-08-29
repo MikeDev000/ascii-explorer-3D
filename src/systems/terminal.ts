@@ -290,7 +290,7 @@ export class TerminalSystem {
       const result = CraftingService.installPowerCell();
       if (result.success) {
         this.printSequence(result.steps, 220, result.warning, () => {
-          CraftingService.animateBatteryRecharge(100, 1500);
+          CraftingService.animateBatteryRecharge(result.targetBattery ?? 100, 1500);
           if (result.isCorrupted) {
             useGameStore.getState().setTriggerGlitch(true);
           }
@@ -311,7 +311,10 @@ export class TerminalSystem {
       const result = CraftingService.installPatch();
       if (result.success) {
         this.printSequence(result.steps, 220, result.warning, () => {
-          CraftingService.animateBatteryRecharge(40, 1000);
+          CraftingService.animateBatteryRecharge(result.targetBattery ?? 40, 1000);
+          if (result.isCorrupted) {
+            useGameStore.getState().setTriggerGlitch(true);
+          }
         });
       } else {
         this.printSequence(result.steps, 150);

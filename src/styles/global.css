@@ -32,7 +32,7 @@ html, body {
   height: 100%;
   pointer-events: none;
   display: none; /* Initially hidden, shown when playing */
-  z-index: 5;
+  z-index: 25; /* Above terminal (z-index: 20) so HUD/Battery remains fully visible */
 }
 
 #crosshair {
@@ -198,7 +198,24 @@ html, body {
   height: 100%;
   background-color: #0ff;
   box-shadow: 0 0 10px #0ff;
-  transition: width 0.1s linear, background-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.battery-charging {
+  border-color: #00ffff !important;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.7), inset 0 0 10px rgba(0, 255, 255, 0.4) !important;
+  animation: batteryChargePulse 0.35s infinite alternate !important;
+}
+
+@keyframes batteryChargePulse {
+  0% {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.4), inset 0 0 5px rgba(0, 255, 255, 0.2);
+    border-left-color: #00ffff;
+  }
+  100% {
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.9), inset 0 0 12px rgba(0, 255, 255, 0.6);
+    border-left-color: #ffffff;
+  }
 }
 
 /* Glitch animation for low battery */

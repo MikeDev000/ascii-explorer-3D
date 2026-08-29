@@ -97,6 +97,11 @@ export class GameManager {
       e.stopPropagation();
       this.startGame();
     });
+
+    // Reactive store subscription ensures HUD updates on all store changes
+    useGameStore.subscribe(() => {
+      this.updateHUD();
+    });
   }
 
   public transitionTo(newState: GameState) {
@@ -312,10 +317,8 @@ export class GameManager {
   };
 
   private checkGameOverCondition(): boolean {
-    const storeState = useGameStore.getState();
-    if (storeState.battery <= 0) {
-      return true;
-    }
+    // Condición de Game Over: Por definir (TBD)
+    // El jugador puede seguir explorando a oscuras con 0% de batería para buscar componentes y craftear celdas
     return false;
   }
 
