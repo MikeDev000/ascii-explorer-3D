@@ -110,7 +110,7 @@ export class CraftingService {
     requestAnimationFrame(step);
   }
 
-  public static craftUnsafeBattery(): { success: boolean; message: string; warning?: string } {
+  public static craftUnsafeBattery(): { success: boolean; steps: string[]; warning?: string } {
     const store = useGameStore.getState();
     const inv = store.inventory;
     
@@ -118,16 +118,49 @@ export class CraftingService {
       const toRemove = [inv[0].id, inv[1].id];
       store.removeCollectibles(toRemove);
 
-      // Recharge unsafe: 40% battery, heavy penalty
-      store.setBattery(40);
-      LampSystem.setTimeOn(10); // Penalty adds 10 seconds of "wear" immediately
+      // Add unstable patch to inventory
+      store.addCollectible({
+        id: 'patch_' + Date.now(),
+        type: 'patch',
+        name: 'PowerCell_unstable.o',
+        ascii: '[!?~]',
+        corrupted: false,
+        volatile: true
+      });
 
-      return { 
-        success: true, 
-        message: 'WARNING: Unsafe build forced. Battery restored to 40%. Severe wear penalty applied.' 
-      };
+      const steps = [
+        '[!] WARNING: Missing required symbols. Enforcing dirty compilation...',
+        '[!] Generating hotpatch with uninitialized memory offsets...',
+        '[✓] Output object created: /inventory/PowerCell_unstable.o',
+        "[i] Run './PowerCell_unstable.o' or 'load patch' to inject."
+      ];
+
+      return { success: true, steps };
     }
     
-    return { success: false, message: 'ERROR: Requires at least 2 components for emergency patch.' };
+    return { success: false, steps: ['ERROR: Requires at least 2 components for emergency patch.'] };
+  }
+
+  public static installPatch(): { success: boolean; steps: string[]; warning?: string } {
+    const store = useGameStore.getState();
+    const inv = store.inventory;
+    const patch = inv.find(i => i.type === 'patch');
+
+    if (patch) {
+      store.removeCollectibles([patch.id]);
+
+      store.setBatteryUnstable(true);
+
+      const steps = [
+        '[*] Force-injecting patch into PID 4096 (Debugger_Lamp)...',
+        '[!] WARNING: Memory alignment failure. Buffer capacity capped at 40%.',
+        '[!] WARNING: High thermal dissipation detected. Drain rate multiplier = 2.5x.',
+        '[✓] Core power set to 40%.'
+      ];
+
+      return { success: true, steps };
+    }
+
+    return { success: false, steps: ['ERROR: No PowerCell_unstable.o found in inventory or already injected.'] };
   }
 }

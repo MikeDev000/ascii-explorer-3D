@@ -161,9 +161,17 @@ export class GameManager {
 
   public startGame() {
     // Reset global store state
-    useGameStore.getState().setBattery(100);
-    useGameStore.getState().setTerminalOpen(false);
-    useGameStore.getState().setTriggerGlitch(false);
+    const store = useGameStore.getState();
+    store.setBattery(100);
+    store.setBatteryUnstable(false);
+    store.setTerminalOpen(false);
+    store.setTriggerGlitch(false);
+
+    // Remove volatile items
+    const volatileIds = store.inventory.filter(i => i.volatile).map(i => i.id);
+    if (volatileIds.length > 0) {
+      store.removeCollectibles(volatileIds);
+    }
 
     // Re-build fresh world
     this.setupWorld();

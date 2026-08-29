@@ -2,10 +2,11 @@ import { createStore } from 'zustand/vanilla';
 
 export interface Collectible {
   id: string; // unique instance id
-  type: string; // 'cap', 'pointer', 'hex'
+  type: string; // 'cap', 'pointer', 'hex', 'powercell', 'patch'
   name: string;
   ascii: string;
   corrupted: boolean;
+  volatile?: boolean;
 }
 
 interface GameState {
@@ -20,6 +21,9 @@ interface GameState {
 
   battery: number;
   setBattery: (battery: number) => void;
+
+  isBatteryUnstable: boolean;
+  setBatteryUnstable: (unstable: boolean) => void;
 
   inventory: Collectible[];
   addCollectible: (item: Collectible) => void;
@@ -42,6 +46,9 @@ export const useGameStore = createStore<GameState>((set) => ({
 
   battery: 100,
   setBattery: (battery: number) => set({ battery }),
+
+  isBatteryUnstable: false,
+  setBatteryUnstable: (unstable: boolean) => set({ isBatteryUnstable: unstable }),
 
   inventory: [],
   addCollectible: (item: Collectible) => set((state) => ({

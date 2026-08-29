@@ -85,8 +85,28 @@ export class LampSystem {
       // Heat up (increase continuous usage time)
       this._timeOn += delta;
 
+      let multiplier = 1.0;
+      if (store.isBatteryUnstable) {
+        multiplier = 2.5;
+        
+        // Flicker effect: lamp flickers every ~4.5 seconds
+        const timeMs = performance.now();
+        const cycle = timeMs % 4500;
+        // Flicker in a small window (e.g. 0-100ms and 150-200ms)
+        if (cycle < 100 || (cycle > 150 && cycle < 200)) {
+          this.spotLight.intensity = Math.random() * 2.0; // Dim significantly
+          SharedUniforms.uLampOn.value = 0.4 + Math.random() * 0.3; // Dim in shader
+        } else {
+          this.spotLight.intensity = 10.0;
+          SharedUniforms.uLampOn.value = 1.0;
+        }
+      } else {
+        this.spotLight.intensity = 10.0;
+        SharedUniforms.uLampOn.value = 1.0;
+      }
+
       // Calculate instantaneous drain rate (derivative of k * t^2 -> 2 * k * t)
-      const drainRate = 2 * this.drainK * this._timeOn;
+      const drainRate = 2 * this.drainK * this._timeOn * multiplier;
 
       // Drain battery
       const newBattery = Math.max(0, store.battery - drainRate * delta);

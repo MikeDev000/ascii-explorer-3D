@@ -18,6 +18,7 @@ export class TerminalSystem {
     'build cell', 'make bat0', 'compile buffer',
     './powercell.bin', 'insmod powercell.bin', 'load cell',
     'cell -u', 'build cell -u', 'make bat0 --unsafebuild',
+    './powercell_unstable.o', 'load patch',
     'hello', 'help', 'resetbattery', 'clear', 'cls',
     'cat', 'set', 'chmod', 'free', 'kill'
   ];
@@ -259,6 +260,8 @@ export class TerminalSystem {
         inv.forEach(item => {
           if (item.type === 'powercell') {
             this.print(`${item.ascii} ${item.name} [Type: BIN-64 / State: UNMOUNTED / Perms: -rwxr-xr-x] ${item.corrupted ? '(CORRUPTED)' : ''}`);
+          } else if (item.type === 'patch') {
+            this.print(`${item.ascii} ${item.name} [Type: Dirty Hotpatch / State: UNMOUNTED] ${item.corrupted ? '(CORRUPTED)' : ''}`);
           } else {
             this.print(`${item.ascii} ${item.name} ${item.corrupted ? '(CORRUPTED)' : ''}`);
           }
@@ -300,9 +303,18 @@ export class TerminalSystem {
 
     if (['make bat0 --unsafebuild', 'build cell -u', 'cell -u'].includes(fullCmd)) {
       const result = CraftingService.craftUnsafeBattery();
-      this.print(result.message);
-      if (result.warning) {
-        this.print(result.warning);
+      this.printSequence(result.steps, 180, result.warning);
+      return;
+    }
+
+    if (['./powercell_unstable.o', 'load patch', 'insmod powercell_unstable.o', './powercell_unstable', 'insmod powercell_unstable'].includes(fullCmd)) {
+      const result = CraftingService.installPatch();
+      if (result.success) {
+        this.printSequence(result.steps, 220, result.warning, () => {
+          CraftingService.animateBatteryRecharge(40, 1000);
+        });
+      } else {
+        this.printSequence(result.steps, 150);
       }
       return;
     }
