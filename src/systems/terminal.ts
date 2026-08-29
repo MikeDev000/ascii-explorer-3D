@@ -20,7 +20,7 @@ export class TerminalSystem {
     'cell -u', 'build cell -u', 'make bat0 --unsafebuild',
     './powercell_unstable.o', 'load patch',
     'hello', 'help', 'resetbattery', 'clear', 'cls',
-    'cat', 'set', 'chmod', 'free', 'kill'
+    'cat', 'set', 'set gravity =', 'set jumpForce =', 'chmod', 'free', 'kill'
   ];
 
   private history: string[] = [];
@@ -327,18 +327,23 @@ export class TerminalSystem {
         this.print('Hello world :)');
         break;
       case 'help':
-        this.print('Commands:');
-        this.print('hello - Says hello');
-        this.print('help - Shows this message');
-        this.print('cat [objeto] - Lee el contenido o el estado de un objeto');
-        this.print('set [variable] = [valor] - Cambia el valor de una propiedad del mapa o jugador. Ej: gravity');
-        this.print('chmod [permiso] [objeto] - Cambia las propiedades de acceso de un muro o puerta');
-        this.print('free - Libera la memoria cercana, destruye obstaculos menores alrededor');
-        this.print('kill <proceso> - Elimina un proceso/entidad/obstaculo de código corrupto');
-        this.print('ls /inventory/ - Lists collected components');
-        this.print('sanitize -f - Cleans corrupted Hex_Payload');
-        this.print('build cell - Crafts 100% battery (Requires 3 items)');
-        this.print('cell -u - Emergency craft 40% battery (Requires 2 items)');
+        this.print('=== INVENTORY & FILES ===');
+        this.print('ls [/inventory/]        : Lista archivos y componentes recolectados.');
+        this.print('cat <objeto>            : Inspecciona tipo, estado y datos de un objeto.');
+        this.print('sanitize -f             : Repara y desinfecta archivos corruptos.');
+        this.print('');
+        this.print('=== CRAFTING & ENERGY ===');
+        this.print('make bat0               : Compila PowerCell.bin (requiere 3 componentes).');
+        this.print('insmod powercell.bin    : Monta celda de poder y restaura al 100%.');
+        this.print('build cell -u           : Crafteo sucio de PowerCell_unstable.o (2 comp).');
+        this.print('./powercell_unstable.o  : Inyecta parche al 40% (desgaste acelerado).');
+        this.print('');
+        this.print('=== SYSTEM & KERNEL ===');
+        this.print('chmod <perm> <obj>      : Cambia permisos de muros o puertas del mapa.');
+        this.print('free                    : Libera memoria destruyendo obstáculos cercanos.');
+        this.print('kill <proceso>          : Elimina procesos o entidades corruptas.');
+        this.print('set <var> = <valor>     : Modifica variables del sistema.');
+        this.print('clear / cls             : Limpia la pantalla de la terminal.');
         break;
       case 'cat': {
         if (args.length < 2) {
@@ -359,12 +364,29 @@ export class TerminalSystem {
         break;
       }
       case 'set': {
-        if (args.length < 4 || args[2] !== '=') {
-          this.print('Usage: set [variable] = [valor]');
+        const raw = cmd.substring(3).trim(); // Text after 'set'
+        let variable = '';
+        let valor = '';
+
+        if (raw.includes('=')) {
+          const parts = raw.split('=');
+          variable = parts[0].trim();
+          valor = parts.slice(1).join('=').trim();
         } else {
-          const variable = args[1];
-          const valor = args[3];
-          this.print(`set: property '${variable}' updated to '${valor}'`);
+          const parts = raw.split(' ').filter(Boolean);
+          if (parts.length >= 2) {
+            variable = parts[0].trim();
+            valor = parts[1].trim();
+          }
+        }
+
+        if (!variable || !valor) {
+          this.print('Usage: set <variable> = <valor>');
+          this.print('Available variables: gravity, jumpForce');
+        } else {
+          const res = WorldQueryService.setVariable(variable, valor);
+          this.print(res.message);
+          if (res.warning) this.print(res.warning);
         }
         break;
       }

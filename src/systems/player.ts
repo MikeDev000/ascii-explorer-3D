@@ -5,6 +5,8 @@ import RAPIER from '@dimforge/rapier3d';
 import { useGameStore } from '../store/gameStore';
 
 export class PlayerController {
+  public static instance: PlayerController | null = null;
+
   private controls: PointerLockControls;
   private input: InputManager;
   private rigidBody: RAPIER.RigidBody | null = null;
@@ -26,6 +28,7 @@ export class PlayerController {
     input: InputManager,
     world?: RAPIER.World
   ) {
+    PlayerController.instance = this;
     this.controls = new PointerLockControls(camera, domElement);
     this.input = input;
     this.world = world ?? null;
@@ -83,12 +86,35 @@ export class PlayerController {
   }
 
   public dispose() {
+    if (PlayerController.instance === this) {
+      PlayerController.instance = null;
+    }
     this.controls.disconnect(); // Disconnects pointer lock events
     this.controls.dispose();
     if (this.rigidBody && this.world) {
       this.world.removeRigidBody(this.rigidBody);
     }
   }
+
+  public setJumpForce(force: number) {
+    this.jumpImpulse = force;
+  }
+
+  public getJumpForce(): number {
+    return this.jumpImpulse;
+  }
+
+  public static getJumpForce(): number {
+    return PlayerController.instance ? PlayerController.instance.getJumpForce() : 7;
+  }
+
+  public static setJumpForce(force: number) {
+    if (PlayerController.instance) {
+      PlayerController.instance.setJumpForce(force);
+    }
+  }
+
+
 
   public getRigidBody(): RAPIER.RigidBody | null {
     return this.rigidBody;
