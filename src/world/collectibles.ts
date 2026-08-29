@@ -64,42 +64,10 @@ export class CollectiblesSystem {
     window.addEventListener('resize', this.onResize);
     this.onResize(); // Initial sizing
 
-    // Spawn the 4 specific dev items right in front of the player (around z = -3)
-    this.spawnItem({
-      id: 'cap_1',
-      type: 'cap',
-      name: 'Cycle_Cap.o',
-      ascii: '[~~~~]',
-      corrupted: false
-    }, new THREE.Vector3(2, 1, -3));
-
-    this.spawnItem({
-      id: 'ptr_1',
-      type: 'pointer',
-      name: 'Raw_Pointer.h',
-      ascii: '{;:;}',
-      corrupted: false
-    }, new THREE.Vector3(5, 1, -3));
-
-    this.spawnItem({
-      id: 'hex_normal_1',
-      type: 'hex',
-      name: 'Hex_Payload.bin',
-      ascii: '0x',
-      corrupted: false
-    }, new THREE.Vector3(-1, 1, -3));
-
-    // Corrupted version
-    this.spawnItem({
-      id: 'hex_corrupt_1',
-      type: 'hex',
-      name: 'Hex_Payload.bin',
-      ascii: '0x?',
-      corrupted: true
-    }, new THREE.Vector3(-4, 1, -3));
+    // Collectibles are now injected externally via spawnItem() from GameManager/level data
   }
 
-  private spawnItem(data: Collectible, position: THREE.Vector3) {
+  public spawnItem(data: Collectible, position: THREE.Vector3) {
     // 1. DOM Elements removed. Using Canvas Overlay instead.
 
     // 2. Create 3D Multi-Layered Object Group
@@ -132,8 +100,8 @@ export class CollectiblesSystem {
     const wireMesh = new THREE.Mesh(wireGeo, wireMat);
     group.add(wireMesh);
 
-    // Optimized PointLight to restore ground luminance efficiently (short range, no shadows)
-    const pointLight = new THREE.PointLight(mainColor, 2.0, 4.5, 2);
+    // PointLight calibrada para proyectar un reflejo y aura clara sobre el suelo y muros cercanos
+    const pointLight = new THREE.PointLight(mainColor, 4.0, 5.5, 1.4);
     pointLight.castShadow = false;
     group.add(pointLight);
 

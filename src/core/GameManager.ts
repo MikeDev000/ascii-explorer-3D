@@ -8,7 +8,7 @@ import { PlayerController } from '../systems/player';
 import { LampSystem } from '../systems/lamp';
 import { TerminalSystem } from '../systems/terminal';
 import { CollectiblesSystem } from '../world/collectibles';
-import { createMap } from '../world/map';
+import { createMap, getSector7Collectibles } from '../world/map';
 import { useGameStore } from '../store/gameStore';
 
 export const GameState = {
@@ -154,6 +154,12 @@ export class GameManager {
     this.lamp = new LampSystem(this.camera, this.input);
     this.terminal = new TerminalSystem(this.input);
     this.collectibles = new CollectiblesSystem(this.scene, this.camera, this.player, this.physicsWorld);
+
+    // Spawn level collectibles (Sector-7 Data Crypt)
+    getSector7Collectibles().forEach(({ data, position }) => {
+      this.collectibles.spawnItem(data, new THREE.Vector3(position.x, position.y, position.z));
+    });
+
 
     // Detect unlock when in-game (e.g. user pressed ESC or window lost focus)
     this.player.onUnlock(() => {

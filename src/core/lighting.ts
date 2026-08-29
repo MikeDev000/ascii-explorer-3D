@@ -1,18 +1,18 @@
 import * as THREE from 'three';
 
 export function setupLighting(scene: THREE.Scene) {
-  // Main directional light for harsh shadows and depth
-  const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+  // Main directional light for clean shadows and terminal contrast
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
   dirLight.position.set(20, 40, -20);
   dirLight.castShadow = true;
 
   dirLight.shadow.mapSize.width = 1024;
   dirLight.shadow.mapSize.height = 1024;
   dirLight.shadow.camera.near = 0.5;
-  dirLight.shadow.camera.far = 100;
+  dirLight.shadow.camera.far = 120;
 
-  // Expand shadow camera to cover the map area
-  const d = 30;
+  // Cover the 60x60 map area cleanly
+  const d = 35;
   dirLight.shadow.camera.left = -d;
   dirLight.shadow.camera.right = d;
   dirLight.shadow.camera.top = d;
@@ -21,12 +21,14 @@ export function setupLighting(scene: THREE.Scene) {
 
   scene.add(dirLight);
 
-  // Ambient light for full field-of-view visibility
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-  scene.add(ambientLight);
+  // Subtle opposite fill light: soft monochrome fill so back-facing walls remain readable
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.85);
+  fillLight.position.set(-20, 25, 20);
+  fillLight.castShadow = false;
+  scene.add(fillLight);
 
-  // Point lights for dramatic shadows and specular highlights
-  const pointLight1 = new THREE.PointLight(0xffffff, 1.5, 10);
-  pointLight1.position.set(10, 5, 10);
-  scene.add(pointLight1);
+  // Balanced ambient light: subtle baseline illumination for ASCII character definition
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+  scene.add(ambientLight);
 }
+
